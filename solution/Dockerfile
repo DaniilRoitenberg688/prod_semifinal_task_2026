@@ -1,14 +1,30 @@
-FROM python:3.12.1-alpine3.19
+# Базовый образ с общими зависимостями
+FROM python:3.11-slim as builder
 
 WORKDIR /app
 
-RUN apk add --no-cache curl
+# Устанавливаем системные зависимости
 
-COPY solution/requirements.txt requirements.txt
-RUN pip3 install --no-cache-dir -r requirements.txt
+# Копируем requirements и устанавливаем зависимости
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./solution .
+# Копируем весь код
+COPY . .
 
-ENV SERVER_PORT=8080
 
-CMD ["sh", "-c", "exec python3 -m flask run --host=0.0.0.0 --port=$SERVER_PORT"]
+
+# Стадия для миграций
+FROM builder as migrations
+CMD ["alembic", "-c", "./alembic.ini", "upgrade", "head"]
+
+# Стадия для основного приложения
+FROM builder as run
+EXPOSE 8000
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Стадия для разработки
+FROM builder as dev
+EXPOSE 8000
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    container_name: postgres_container
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - prod_database_network
+
+  backend:
+    build:
+      context: .
+      target: run
+    env_file:
+      - .env.docker
+    container_name: backend
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+          ignore:
+            - .venv
+            - .idea
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    networks:
+      - prod_database_network
+
+
+
+  migrate:
+    build:
+      context: .
+      target: migrations
+    container_name: migrations
+    #command: [ "-command", "up" ]
+    env_file:
+      - .env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - prod_database_network
+
+
+networks:
+  prod_database_network:
+    driver: bridge
+
+
