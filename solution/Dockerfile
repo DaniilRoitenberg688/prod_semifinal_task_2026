@@ -8,12 +8,12 @@ RUN apk add --no-cache curl
 # Устанавливаем системные зависимости
 
 # Копируем requirements и устанавливаем зависимости
-COPY requirements.txt .
+COPY solutions/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем весь код
-COPY . .
+COPY solutions .
 
 
 RUN chmod +x run.sh
