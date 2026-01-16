@@ -47,5 +47,8 @@ class LoginRequest(BaseModel):
 
 
 class UserOut(BaseModel):
-    token: str
+    token: str = Field(validation_alias=AliasChoices("token", "accessToken"), alias="accessToken")
     user: User
+
+class UserOutWithExp(UserOut):
+    exps: int = Field(alias="expiresIn", default=3600, validation_alias=AliasChoices("exp", "expiresIn"))

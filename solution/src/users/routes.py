@@ -6,7 +6,7 @@ from src.exceptions import ApiError, ErrorCode
 from src.database import get_session
 from src.users.models import User
 from src.users.repository import create_token, create_user, get_user_by_email, to_scheme
-from src.users.schemas import LoginRequest, User as UserScheme, RegisterUser, UserOut
+from src.users.schemas import LoginRequest, User as UserScheme, RegisterUser, UserOut, UserOutWithExp
 
 
 auth_router = APIRouter(prefix="/api/v1/auth")
@@ -28,7 +28,7 @@ async def register_user(
     user: User = await create_user(session, user_data)
     user_out: UserScheme = to_scheme(user)
     token: str = create_token(user.id)
-    return UserOut(token=token, user=user_out)
+    return UserOut(accessToken=token, user=user_out)
 
 
 @auth_router.post("/login", status_code=200)
@@ -57,6 +57,7 @@ async def login_user(data: LoginRequest, session: AsyncSession = Depends(get_ses
         )
 
     token = create_token(user.id)
-    return JSONResponse({"token": token})
+    user_out = to_scheme(user)
+    return UserOutWithExp(accessToken=token, user=user_out)
 
 
