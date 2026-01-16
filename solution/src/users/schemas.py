@@ -1,5 +1,5 @@
 import uuid
-from pydantic import BaseModel, Field, ConfigDict, field_validator 
+from pydantic import BaseModel, Field, ConfigDict, field_validator, EmailStr
 from pydantic.aliases import AliasChoices
 from src.users.models import Gender, MaritalStatus, UserRole
 import datetime
@@ -7,7 +7,7 @@ import regex
 
 
 class BaseUser(BaseModel):
-    email: str = Field(max_length=254)
+    email: EmailStr = Field(max_length=254)
     full_name: str = Field(min_length=2, max_length=200, alias="fullName", validation_alias=AliasChoices("full_name", "fullName"), )
     region: str | None
     gender: Gender | None
@@ -39,6 +39,11 @@ class RegisterUser(BaseUser):
 
 class CreateUser(BaseUser):
     hashed_password: str
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr = Field(max_length=254)
+    password: str = Field(min_length=8, max_length=72)
 
 
 class UserOut(BaseModel):

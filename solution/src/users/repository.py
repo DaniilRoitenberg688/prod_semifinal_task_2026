@@ -18,7 +18,12 @@ def create_token(id: uuid.UUID):
     token = jwt.encode(payload, config.RANDOM_SECRET, "HS256")
     return token
 
-async def create_user(sesssion: AsyncSession, user_data: RegisterUser) -> UserSchema:
+
+def to_scheme(user: User) -> UserSchema:
+    user_sc = UserSchema.model_validate(user)
+    return user_sc
+
+async def create_user(sesssion: AsyncSession, user_data: RegisterUser) -> User:
     user_dict = user_data.model_dump()
     password = user_dict.pop("password")
     user = User(**user_dict)
@@ -27,24 +32,23 @@ async def create_user(sesssion: AsyncSession, user_data: RegisterUser) -> UserSc
     sesssion.add(user)
     await sesssion.commit()
     await sesssion.refresh(user)
-    user_sc = UserSchema.model_validate(user)
-    return user_sc
+    return user
 
 
-async def get_user_by_id(sesssion: AsyncSession, id: uuid.UUID) -> UserSchema | None:
+async def get_user_by_id(sesssion: AsyncSession, id: uuid.UUID) -> User | None:
     q = select(User).where(User.id == id)
     res = await sesssion.execute(q)
     user: User | None = res.scalars().first()
     if user is None:
         return None
-    user_sc = UserSchema.model_validate(user)
-    return user_sc
+    return user
     
-async def get_user_by_email(sesssion: AsyncSession, email: str) -> UserSchema | None:
+async def get_user_by_email(sesssion: AsyncSession, email: str) -> User | None:
     q = select(User).where(User.email == email)
     res = await sesssion.execute(q)
     user: User | None = res.scalars().first()
     if user is None:
         return None
-    user_sc = UserSchema.model_validate(user)
-    return user_sc
+    return user
+
+    
