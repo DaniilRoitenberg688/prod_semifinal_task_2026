@@ -21,6 +21,7 @@ services:
   backend:
     build:
       context: .
+      dockerfile: Dockerfile.local
       target: run
     env_file:
       - .env.docker
@@ -35,8 +36,8 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-#      migrate:
-#        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
       db:
         condition: service_healthy
     networks:
@@ -44,19 +45,20 @@ services:
 
 
 
-#  migrate:
-#    build:
-#      context: .
-#      target: migrations
-#    container_name: migrations
-#    #command: [ "-command", "up" ]
-#    env_file:
-#      - .env.docker
-#    depends_on:
-#      db:
-#        condition: service_healthy
-#    networks:
-#      - prod_database_network
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+      target: migrations
+    container_name: migrations
+    #command: [ "-command", "up" ]
+    env_file:
+      - .env.docker
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - prod_database_network
 
 
 networks:
