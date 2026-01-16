@@ -21,6 +21,6 @@ RUN chmod +x run.sh
 
 # Стадия для основного приложения
 FROM builder as run
-EXPOSE 8000
+EXPOSE 8080
 CMD ["./run.sh"]
 
