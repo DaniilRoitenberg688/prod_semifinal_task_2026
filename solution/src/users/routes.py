@@ -91,6 +91,7 @@ async def create_user_admin(
             err_code=ErrorCode.email_already_exists,
             message="user already exists",
         )
+    print("i am creating user")
     user_data_cr = CreateUser(**user_data.model_dump())
     user: User = await create_user(user_data_cr)
     user_out: UserScheme = to_scheme(user)
