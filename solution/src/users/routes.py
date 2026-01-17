@@ -81,7 +81,7 @@ async def get_all_users(page:int=Query(default=0, ge=0), size: int=Query(default
 
 
 
-@user_router.post("", status_code=201)
+@user_router.post("", status_code=200)
 async def create_user_admin(
     user_data: RegisterUser, current_user:User=Depends(check_token_admin_only)) -> UserScheme:
     u = await get_user_by_email(user_data.email)
