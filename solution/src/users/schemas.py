@@ -19,7 +19,7 @@ class BaseUser(BaseModel):
 class UserScheme(BaseUser):
     id: uuid.UUID
     is_active: bool = Field(validation_alias=AliasChoices("isActive", "is_active"), alias="isActive")
-    user_role: UserRole = Field(default=UserRole.user, validation_alias=AliasChoices("userRole", "userRole"), alias="userRole")
+    user_role: UserRole = Field(default=UserRole.user, validation_alias=AliasChoices("user_role", "userRole"), alias="userRole")
     created_at: datetime.datetime = Field(validation_alias=AliasChoices("created_at"), alias="createdAt")
     updated_at: datetime.datetime = Field(validation_alias=AliasChoices("updated_at"), alias="updatedAt")
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,7 +69,7 @@ user_router = APIRouter(prefix="/api/v1/users")
 
 
 @user_router.get("", status_code=200)
-async def get_all_users(page: int=0, size: int=20, user:User=Depends(check_token_admin_only)) -> PagedUsers:
+async def get_all_users(page:int=Query(default=0, ge=0), size: int=Query(default=20, ge=1, le=100), user:User=Depends(check_token_admin_only)) -> PagedUsers:
     users = await get_users(page, size)
     users_data = [to_scheme(i) for i in users]
     return PagedUsers(

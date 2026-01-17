@@ -14,6 +14,7 @@ from src.users.models import User, UserRole
 sec = HTTPBearer()
 async def check_token(token: Annotated[HTTPAuthorizationCredentials, Depends(sec)]):
     user, pl = await verify_token(token.credentials)
+    print(user)
     if user is None:
         raise ApiError(
             status_code=404,
@@ -24,15 +25,15 @@ async def check_token(token: Annotated[HTTPAuthorizationCredentials, Depends(sec
 
 async def check_token_admin_only(token: Annotated[HTTPAuthorizationCredentials, Depends(sec)]):
     user, pl = await verify_token(token.credentials)
-    if user is None:
-        raise ApiError(
-            status_code=404,
-            err_code=ErrorCode.not_found,
-            message="no user"
-        )
-
     print("user", user)
     print("payload", pl)
+    # if user is None:
+    #     raise ApiError(
+    #         status_code=404,
+    #         err_code=ErrorCode.not_found,
+    #         message="no user"
+    #     )
+
         
 
     if pl["role"] != "ADMIN":
