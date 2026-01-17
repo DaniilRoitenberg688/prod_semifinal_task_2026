@@ -29,10 +29,10 @@ class User(Base):
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(nullable=False)
     full_name: Mapped[str] = mapped_column(nullable=False)
-    region: Mapped[str] = mapped_column()
-    gender: Mapped[Gender]
-    marital_status: Mapped[MaritalStatus]
-    age: Mapped[int]
+    region: Mapped[str | None] = mapped_column()
+    gender: Mapped[Gender | None]
+    marital_status: Mapped[MaritalStatus | None]
+    age: Mapped[int | None]
     user_role: Mapped[UserRole] = mapped_column(default=UserRole.user, nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(

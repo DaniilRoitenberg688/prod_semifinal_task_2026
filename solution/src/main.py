@@ -1,20 +1,42 @@
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
+from fastapi.security import OAuth2PasswordBearer
+
+from src.config import config
 from src.exceptions import ApiError, ErrorCode
 from src.exceptions import ValidationError as CustomValidationError
-from src.users.routes import auth_router
+from src.users.routes import auth_router, user_router
+from src.users.schemas import RegisterUser
+from src.users.repository import create_user, get_user_by_email
+from src.database import async_session_maker
 
 
-app = FastAPI()
+@asynccontextmanager
+async def init(app: FastAPI) -> AsyncGenerator[None, None]:
+    user = await get_user_by_email(str(config.ADMIN_EMAIL))
+    if user is None:
+        user_data = {}
+        user_data["email"] = config.ADMIN_EMAIL
+        user_data["fullName"] = config.ADMIN_FULLNAME
+        user_data["password"] = config.ADMIN_PASSWORD
+        user_data["userRole"] = "ADMIN"
+        _ = await create_user(RegisterUser(**user_data))
+
+    yield
+
+
+app = FastAPI(lifespan=init)
+
 
 
 @app.exception_handler(RequestValidationError)
 async def validation_error(r: Request, e: ResponseValidationError):
     fields = []
     for i in e.errors():
-        if i["type"] == "json_invalid":
+        if i["type"] in ["json_invalid", "model_attributes_type"]:
             err = ApiError(
                 status_code=400,
                 err_code=ErrorCode.bad_request,
@@ -25,13 +47,15 @@ async def validation_error(r: Request, e: ResponseValidationError):
             errd["path"] = r.url.path
             return JSONResponse(content=errd, status_code=400)
 
-        fields.append({
-            "field": i["loc"][1],
-            "issue": i["msg"],
-            "rejected_value": None
-            if i["loc"][1] == "password" or i["loc"][1] == "hashed_password"
-            else i["input"],
-        })
+        fields.append(
+            {
+                "field": i["loc"][1],
+                "issue": i["msg"],
+                "rejected_value": None
+                if i["loc"][1] == "password" or i["loc"][1] == "hashed_password"
+                else i["input"],
+            }
+        )
     err = CustomValidationError(
         status_code=422,
         err_code=ErrorCode.validation_failed,
@@ -78,3 +102,4 @@ def ping():
 
 
 app.include_router(auth_router, tags=["Auth"])
+app.include_router(user_router, tags=["Users"])

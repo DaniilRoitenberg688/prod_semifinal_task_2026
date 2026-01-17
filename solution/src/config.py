@@ -7,8 +7,14 @@ dotenv.load_dotenv()
 
 class Config():
     ADMIN_EMAIL=os.environ.get("ADMIN_EMAIL")
+    if ADMIN_EMAIL is None:
+        raise Exception("no admin email")
     ADMIN_FULLNAME=os.environ.get("ADMIN_FULLNAME")
-    ADMIN_PASSWORD =os.environ.get("ADMIN_PASSWORD ")
+    if ADMIN_FULLNAME is None:
+        raise Exception("no admin fullname")
+    ADMIN_PASSWORD =os.environ.get("ADMIN_PASSWORD")
+    if ADMIN_PASSWORD is None:
+        raise Exception("no admin password")
     DB_HOST=os.environ.get("DB_HOST")
     DB_PORT=os.environ.get("DB_PORT")
     DB_NAME=os.environ.get("DB_NAME")

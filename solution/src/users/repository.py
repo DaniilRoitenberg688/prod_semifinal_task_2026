@@ -1,17 +1,21 @@
 import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 
+from src.exceptions import ApiError, ErrorCode
 from src.users.models import User
-from src.users.schemas import RegisterUser, User as UserSchema
+from src.users.schemas import RegisterUser, UserScheme
+from src.database import async_session_maker
 import datetime
 import jwt
 from src.config import config
 
 
-def create_token(id: uuid.UUID):
+def create_token(user: User):
     payload = {
-        "user_id": str(id),
+        "sub": str(user.id),
+        "role": str(user.user_role.value),
         "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),  # срок действия
         "iat": datetime.datetime.utcnow(),  # время выпуска
     }
@@ -19,36 +23,86 @@ def create_token(id: uuid.UUID):
     return token
 
 
-def to_scheme(user: User) -> UserSchema:
-    user_sc = UserSchema.model_validate(user)
+async def verify_token(token: str) -> Optional[User]:
+    try:
+        payload = jwt.decode(
+            token, 
+            config.RANDOM_SECRET,
+            algorithms=["HS256"]
+        )
+        if payload["exp"] <= datetime.datetime.utcnow().microsecond:
+            raise ApiError(
+                status_code=401,
+                err_code=ErrorCode.unauthorized,
+                message="expired"
+            )
+        user = await get_user_by_id(payload["sub"])
+        if user is None:
+            raise ApiError(
+                status_code=404,
+                err_code=ErrorCode.not_found,
+                message="cannot find user"
+            )
+
+        return user
+    except jwt.ExpiredSignatureError:
+        raise ApiError(
+            status_code=401,
+            err_code=ErrorCode.unauthorized,
+            message="expired"
+        )
+    except jwt.InvalidTokenError:
+        raise ApiError(
+            status_code=401,
+            err_code=ErrorCode.unauthorized,
+            message="invalid"
+        )
+    except Exception as e:
+        raise ApiError(
+            status_code=401,
+            err_code=ErrorCode.unauthorized,
+            message=f"dont know {e}"
+        )
+
+def to_scheme(user: User) -> UserScheme:
+    user_sc = UserScheme.model_validate(user)
     return user_sc
 
-async def create_user(sesssion: AsyncSession, user_data: RegisterUser) -> User:
-    user_dict = user_data.model_dump()
-    password = user_dict.pop("password")
-    user = User(**user_dict)
-    user.id = uuid.uuid4()
-    user.set_password(password)
-    sesssion.add(user)
-    await sesssion.commit()
-    await sesssion.refresh(user)
-    return user
+async def create_user(user_data: RegisterUser) -> User:
+    async with async_session_maker() as session:
+        user_dict = user_data.model_dump()
+        password = user_dict.pop("password")
+        user = User(**user_dict)
+        user.id = uuid.uuid4()
+        user.set_password(password)
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        return user
 
 
-async def get_user_by_id(sesssion: AsyncSession, id: uuid.UUID) -> User | None:
-    q = select(User).where(User.id == id)
-    res = await sesssion.execute(q)
-    user: User | None = res.scalars().first()
-    if user is None:
-        return None
-    return user
+async def get_user_by_id(id: uuid.UUID) -> User | None:
+    async with async_session_maker() as session:
+        q = select(User).where(User.id == id)
+        res = await session.execute(q)
+        user: User | None = res.scalars().first()
+        if user is None:
+            return None
+        return user
     
-async def get_user_by_email(sesssion: AsyncSession, email: str) -> User | None:
-    q = select(User).where(User.email == email)
-    res = await sesssion.execute(q)
-    user: User | None = res.scalars().first()
-    if user is None:
-        return None
-    return user
+async def get_user_by_email(email: str) -> User | None:
+    async with async_session_maker() as session:
+        q = select(User).where(User.email == email)
+        res = await session.execute(q)
+        user: User | None = res.scalars().first()
+        if user is None:
+            return None
+        return user
+
+async def get_users(page: int, size: int) -> list[User]:
+    async with async_session_maker() as session:
+        q = select(User).limit(size).offset((page) * size)
+        res = await session.scalars(q)
+        return list(res.all())
 
     
