@@ -23,7 +23,8 @@ async def init(app: FastAPI) -> AsyncGenerator[None, None]:
         user_data["fullName"] = config.ADMIN_FULLNAME
         user_data["password"] = config.ADMIN_PASSWORD
         user_data["userRole"] = "ADMIN"
-        _ = await create_user(RegisterUser(**user_data))
+        user = await create_user(RegisterUser(**user_data))
+        print(user.user_role)
 
     yield
 
