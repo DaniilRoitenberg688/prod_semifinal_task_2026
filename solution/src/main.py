@@ -12,7 +12,7 @@ from src.users.routes import auth_router, user_router
 from src.users.schemas import CreateUser, RegisterUser
 from src.users.repository import create_user, get_user_by_email
 from src.database import async_session_maker
-from users.models import UserRole
+from src.users.models import UserRole
 
 
 @asynccontextmanager
