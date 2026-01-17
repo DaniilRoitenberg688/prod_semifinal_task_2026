@@ -1,6 +1,7 @@
 import uuid
 from pydantic import BaseModel, Field, ConfigDict, field_validator, EmailStr
 from pydantic.aliases import AliasChoices
+from sqlalchemy.orm.decl_api import RegistryType
 from src.users.models import Gender, MaritalStatus, UserRole
 import datetime
 import regex
@@ -44,8 +45,9 @@ class RegisterUser(BaseUser):
         
         return v
 
-class CreateUser(BaseUser):
-    hashed_password: str
+class CreateUser(RegisterUser):
+    user_role: UserRole = Field(default=UserRole.user, validation_alias=AliasChoices("userRole", "userRole"), alias="userRole")
+
 
 
 class LoginRequest(BaseModel):

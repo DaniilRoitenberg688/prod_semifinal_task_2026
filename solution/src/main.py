@@ -12,6 +12,7 @@ from src.users.routes import auth_router, user_router
 from src.users.schemas import RegisterUser
 from src.users.repository import create_user, get_user_by_email
 from src.database import async_session_maker
+from users.models import UserRole
 
 
 @asynccontextmanager
@@ -22,7 +23,7 @@ async def init(app: FastAPI) -> AsyncGenerator[None, None]:
         user_data["email"] = config.ADMIN_EMAIL
         user_data["fullName"] = config.ADMIN_FULLNAME
         user_data["password"] = config.ADMIN_PASSWORD
-        user_data["userRole"] = "ADMIN"
+        user_data["userRole"] = UserRole.admin
         user = await create_user(RegisterUser(**user_data))
         print(user.user_role)
 

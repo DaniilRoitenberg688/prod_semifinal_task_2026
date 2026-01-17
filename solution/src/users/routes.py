@@ -7,7 +7,7 @@ from src.exceptions import ApiError, ErrorCode
 from src.database import get_session
 from src.users.models import User, UserRole
 from src.users.repository import create_token, create_user, get_user_by_email, get_users, to_scheme
-from src.users.schemas import LoginRequest, UserScheme, RegisterUser, UserOut, UserOutWithExp, PagedUsers
+from src.users.schemas import CreateUser, LoginRequest, UserScheme, RegisterUser, UserOut, UserOutWithExp, PagedUsers
 from src.users.service import check_token, check_token_admin_only
 
 
@@ -28,7 +28,8 @@ async def register_user(
             message="user already exists",
         )
 
-    user: User = await create_user(user_data)
+    user_data_cr = CreateUser(**user_data.model_dump())
+    user: User = await create_user(user_data_cr)
     user_out: UserScheme = to_scheme(user)
     token: str = create_token(user)
     return UserOut(accessToken=token, user=user_out)
@@ -80,7 +81,7 @@ async def get_all_users(page: int=0, size: int=20, user:User=Depends(check_token
 
 
 
-@user_router.post("/", status_code=201)
+@user_router.post("", status_code=201)
 async def create_user_admin(
     user_data: RegisterUser, current_user:User=Depends(check_token_admin_only)) -> UserScheme:
     u = await get_user_by_email(user_data.email)
@@ -90,8 +91,8 @@ async def create_user_admin(
             err_code=ErrorCode.email_already_exists,
             message="user already exists",
         )
-
-    user: User = await create_user(user_data)
+    user_data_cr = CreateUser(**user_data.model_dump())
+    user: User = await create_user(user_data_cr)
     user_out: UserScheme = to_scheme(user)
     return user_out
 

@@ -5,7 +5,7 @@ from typing import Optional
 
 from src.exceptions import ApiError, ErrorCode
 from src.users.models import User
-from src.users.schemas import RegisterUser, UserScheme
+from src.users.schemas import CreateUser, RegisterUser, UserScheme
 from src.database import async_session_maker
 import datetime
 import jwt
@@ -68,7 +68,7 @@ def to_scheme(user: User) -> UserScheme:
     user_sc = UserScheme.model_validate(user)
     return user_sc
 
-async def create_user(user_data: RegisterUser) -> User:
+async def create_user(user_data: CreateUser) -> User:
     async with async_session_maker() as session:
         user_dict = user_data.model_dump()
         password = user_dict.pop("password")
