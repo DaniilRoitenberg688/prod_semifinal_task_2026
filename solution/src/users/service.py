@@ -29,7 +29,7 @@ async def check_token_admin_only(token: Annotated[HTTPAuthorizationCredentials, 
             err_code=ErrorCode.not_found,
             message="no user"
         )
-    if user.user_role != UserRole.admin:
+    if user.user_role != UserRole.admin and user.user_role != "ADMIN":
         raise ApiError(
             status_code=403,
             err_code=ErrorCode.forbidden,

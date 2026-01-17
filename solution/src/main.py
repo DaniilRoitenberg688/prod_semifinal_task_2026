@@ -66,6 +66,7 @@ async def validation_error(r: Request, e: ResponseValidationError):
     errd.pop("status_code")
     errd["path"] = r.url.path
     errd["fieldErrors"] = errd.pop("field_errors")
+    errd["code"] = errd.pop("err_code")
     return JSONResponse(content=errd, status_code=422)
 
 
@@ -93,6 +94,7 @@ async def handle_api_error(r: Request, e: ApiError):
     err = e.__dict__
     sc = err.pop("status_code")
     err["path"] = r.url.path
+    err["code"] = err.pop("err_code")
     return JSONResponse(status_code=sc, content=err)
 
 
