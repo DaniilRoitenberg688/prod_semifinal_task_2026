@@ -31,6 +31,10 @@ async def check_token_admin_only(token: Annotated[HTTPAuthorizationCredentials, 
             message="no user"
         )
 
+    print("user", user)
+    print("payload", pl)
+        
+
     if pl["role"] != "ADMIN":
         raise ApiError(
             status_code=403,
