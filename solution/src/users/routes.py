@@ -68,7 +68,7 @@ async def login_user(data: LoginRequest):
 user_router = APIRouter(prefix="/api/v1/users")
 
 
-@user_router.get("/", status_code=200)
+@user_router.get("", status_code=200)
 async def get_all_users(page: int=0, size: int=20, user:User=Depends(check_token_admin_only)) -> PagedUsers:
     users = await get_users(page, size)
     users_data = [to_scheme(i) for i in users]
