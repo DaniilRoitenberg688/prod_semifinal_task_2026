@@ -23,7 +23,7 @@ def create_token(user: User):
     return token
 
 
-async def verify_token(token: str) -> Optional[User]:
+async def verify_token(token: str) -> tuple[Optional[User], dict]:
     try:
         payload = jwt.decode(
             token, 
@@ -44,7 +44,7 @@ async def verify_token(token: str) -> Optional[User]:
                 message="cannot find user"
             )
 
-        return user
+        return user, payload
     except jwt.ExpiredSignatureError:
         raise ApiError(
             status_code=401,
