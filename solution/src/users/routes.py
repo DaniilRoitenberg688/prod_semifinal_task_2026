@@ -11,6 +11,7 @@ from src.users.models import User, UserRole
 from src.users.repository import (
     create_token,
     create_user,
+    deactivate_user,
     get_user_by_email,
     get_user_by_id,
     get_users,
@@ -189,3 +190,25 @@ async def update_user_by_id_route(
     await update_user(user, data)
 
     return to_scheme(user)
+
+
+
+@user_router.delete("/{id}", status_code=204)
+async def delete_user_by_id_route(
+    id: uuid.UUID, current_user: User = Depends(check_token)
+):
+
+
+    if id != current_user.id and current_user.user_role != UserRole.admin:
+        raise ApiError(
+            status_code=403, err_code=ErrorCode.forbidden, message="forbidden"
+        )
+
+    user: Optional[User] = await get_user_by_id(id)
+    if user is None:
+        raise ApiError(
+            status_code=404, err_code=ErrorCode.not_found, message="user not found"
+        )
+
+    await deactivate_user(user)
+

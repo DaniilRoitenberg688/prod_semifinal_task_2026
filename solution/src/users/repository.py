@@ -119,4 +119,12 @@ async def update_user(user: User, data: UpdateUser):
         session.add(user)
         await session.commit()
 
+
+async def deactivate_user(user: User):
+    async with async_session_maker() as session:
+        user.is_active = False
+        session.add(user)
+        await session.commit()
+
+
     
