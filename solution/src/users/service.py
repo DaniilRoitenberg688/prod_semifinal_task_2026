@@ -27,14 +27,12 @@ async def check_token_admin_only(token: Annotated[HTTPAuthorizationCredentials, 
     user, pl = await verify_token(token.credentials)
     print("user", user)
     print("payload", pl)
-    # if user is None:
-    #     raise ApiError(
-    #         status_code=404,
-    #         err_code=ErrorCode.not_found,
-    #         message="no user"
-    #     )
-
-        
+    if user is None:
+        raise ApiError(
+            status_code=404,
+            err_code=ErrorCode.not_found,
+            message="no user"
+        )
 
     if pl["role"] != "ADMIN":
         raise ApiError(
@@ -42,12 +40,12 @@ async def check_token_admin_only(token: Annotated[HTTPAuthorizationCredentials, 
             err_code=ErrorCode.forbidden,
             message="no access"
         )
-#    if user.user_role != UserRole.admin and user.user_role != "ADMIN":
-#        raise ApiError(
-#            status_code=403,
-#            err_code=ErrorCode.forbidden,
-#            message="no access"
-#        )
+    if user.user_role != UserRole.admin and user.user_role != "ADMIN":
+        raise ApiError(
+            status_code=403,
+            err_code=ErrorCode.forbidden,
+            message="no access"
+        )
     return user
 
 

@@ -5,7 +5,7 @@ from typing import Optional
 
 from src.exceptions import ApiError, ErrorCode
 from src.users.models import User
-from src.users.schemas import CreateUser, RegisterUser, UserScheme
+from src.users.schemas import CreateUser, RegisterUser, UpdateUser, UserScheme
 from src.database import async_session_maker
 import datetime
 import jwt
@@ -105,5 +105,18 @@ async def get_users(page: int, size: int) -> list[User]:
         q = select(User).limit(size).offset((page-1) * size)
         res = await session.scalars(q)
         return list(res.all())
+
+async def update_user(user: User, data: UpdateUser):
+    async with async_session_maker() as session:
+        user.full_name = data.full_name
+        if data.user_role is not None:
+            user.user_role = data.user_role
+        if data.is_active is not None:
+            user.is_active = data.is_active
+        user.age = data.age
+        user.gender = data.gender
+        user.region = data.region
+        session.add(user)
+        await session.commit()
 
     
