@@ -1,5 +1,5 @@
 from os import stat
-from typing import Optional
+from typing import Optional, Tuple
 from lark import Lark, Transformer, UnexpectedInput
 from src.exceptions import DslError, ErrorCode
 
@@ -147,16 +147,16 @@ NUMERIC_OPS = {">", ">=", "<", "<="}
 EQUALITY_OPS = {"=", "!="}
 
 
-def validate_ast(node, rule_text):
+def validate_ast(node, rule_text, errors):
     """Рекурсивная проверка семантики; при ошибке -> DslError"""
 
     if isinstance(node, (Or, And)):
-        validate_ast(node.a, rule_text)
-        validate_ast(node.b, rule_text)
+        validate_ast(node.a, rule_text, errors)
+        validate_ast(node.b, rule_text, errors)
         return
 
     if isinstance(node, Not):
-        validate_ast(node.a, rule_text)
+        validate_ast(node.a, rule_text, errors)
         return
 
     if isinstance(node, Comparison):
@@ -165,44 +165,44 @@ def validate_ast(node, rule_text):
 
         # Неизвестное поле
         if node.field not in FIELD_TYPES:
-            raise DslError(
+            errors.append(DslError(
                 status_code=422,
                 err_code=ErrorCode.dsl_invalid_field,
                 message=f"Неизвестное поле '{node.field}'",
                 position=pos_str,
                 near=get_context(rule_text, line, col),
-            )
+            ))
 
         expected = FIELD_TYPES[node.field]
 
         # Неверный оператор
         if node.op not in NUMERIC_OPS | EQUALITY_OPS:
-            raise DslError(
+            errors.append(DslError(
                 status_code=400,
                 err_code=ErrorCode.dsl_invalid_operator,
                 message=f"Недопустимый оператор '{node.op}'",
                 position=pos_str,
                 near=get_context(rule_text, line, col),
-            )
+            ))
 
         # Типы
         if expected == "number" and isinstance(node.value, str):
-            raise DslError(
+            errors.append(DslError(
                 status_code=422,
                 err_code=ErrorCode.dsl_invalid_field,
                 message=f"Поле '{node.field}' числовое, но сравнивается со строкой '{node.value}'",
                 position=pos_str,
                 near=get_context(rule_text, line, col),
-            )
+            ))
 
         if expected == "string" and node.op in NUMERIC_OPS:
-            raise DslError(
+            errors.append(DslError(
                 status_code=422,
                 err_code=ErrorCode.dsl_invalid_field,
                 message=f"Строковое поле '{node.field}' нельзя сравнивать оператором '{node.op}'",
                 position=pos_str,
                 near=get_context(rule_text, line, col),
-            )
+            ))
 
         return
 
@@ -224,31 +224,35 @@ def get_context(text, line, col):
 #                    VALIDATE RULE
 # =====================================================
 
-def validate_rule(rule: str):
+def validate_rule(rule: str) -> Tuple[bool, list, Optional[Node]]:
     """
     Если правило плохое — бросает DslError.
     Если хорошее — возвращает AST.
     """
 
     # --- СИНТАКСИС -----------------------------------
+    errors = []
     try:
         tree = parser.parse(rule)
     except UnexpectedInput as e:
-        raise DslError(
+        errors.append(DslError(
             status_code=422,
             err_code=ErrorCode.dsl_parse_error,
             message="Синтаксическая ошибка",
             position=f"{e.line}:{e.column}",
             near=e.get_context(rule)
-        )
+        ))
+        return False, errors, None
 
     # --- AST -----------------------------------------
     ast = ASTBuilder().transform(tree)
 
     # --- СЕМАНТИКА -----------------------------------
-    validate_ast(ast, rule)
+    validate_ast(ast, rule, errors)
+    if errors:
+        return False, errors, None
 
-    return ast  # валидно
+    return True, errors, ast  # валидно
 
 
 # =====================================================

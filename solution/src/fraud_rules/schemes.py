@@ -24,3 +24,11 @@ class RuleScheme(BaseRule):
     updated_at: datetime.datetime = Field(
         validation_alias=AliasChoices("updated_at"), alias="updatedAt"
     )
+
+class ValidateDSLRequet(BaseModel):
+    dslExpression: str
+
+class ValidateDSLResponse(BaseModel):
+    isValid: bool
+    normalizedExpression: str
+    errors: list[dict]

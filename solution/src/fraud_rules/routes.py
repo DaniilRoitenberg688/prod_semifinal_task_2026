@@ -9,8 +9,8 @@ from src.exceptions import ApiError, ErrorCode
 from src.fraud_rules.service import validate_rule
 from src.fraud_rules.models import FraudRule
 
-from src.fraud_rules.repository import get_rule_by_name, get_rules, to_scheme, create_rule
-from src.fraud_rules.schemes import CreateRule, RuleScheme
+from src.fraud_rules.repository import deactivate_rule, get_rule_by_id, get_rule_by_name, get_rules, to_scheme, create_rule
+from src.fraud_rules.schemes import CreateRule, RuleScheme, ValidateDSLRequet, ValidateDSLResponse
 from src.users.service import check_token_admin_only
 from src.users.models import User
 
@@ -33,10 +33,59 @@ async def create_rule_route(rule_data: CreateRule, current_user:User=Depends(che
             err_code=ErrorCode.rule_name_already_exists,
             message="exists"
         )
-    validate_rule(rule_data.dsl_expression)
+    valid, errors, _ = validate_rule(rule_data.dsl_expression)
+    if not valid:
+        raise errors[0]
     rule: FraudRule = await create_rule(rule_data)
     return to_scheme(rule)
-    
 
+
+@router.post("/validate", status_code=200)
+async def validate_dsl_route(exp: ValidateDSLRequet, current_user:User=Depends(check_token_admin_only) ) -> ValidateDSLResponse:
+    valid, errors, _ = validate_rule(exp.dslExpression)
+    if not valid:
+        errs = [i.to_dict() for i in errors]
+        return ValidateDSLResponse(
+            isValid=False,
+            normalizedExpression="",
+            errors=errs
+        )
+    return ValidateDSLResponse(
+        isValid=True,
+        normalizedExpression=exp.dslExpression,
+        errors=[]
+    )
+
+@router.get("/{id}", status_code=200)
+async def get_rule_route(id: uuid.UUID, current_user:User=Depends(check_token_admin_only) ) -> RuleScheme:
+    rule = await get_rule_by_id(id)
+    if rule is None:
+        raise ApiError(
+            status_code=404,
+            err_code=ErrorCode.not_found,
+            message="cannot find such rule"
+        )
+    rule_d = to_scheme(rule)
+    return rule_d
+
+
+
+@router.delete("/{id}", status_code=204)
+async def delete_rule_route(id: uuid.UUID, current_user:User=Depends(check_token_admin_only) ) :
+    rule = await get_rule_by_id(id)
+    if rule is None:
+        raise ApiError(
+            status_code=404,
+            err_code=ErrorCode.not_found,
+            message="cannot find such rule"
+        )
+    await deactivate_rule(rule)
+
+
+
+
+
+
+    
 
 
