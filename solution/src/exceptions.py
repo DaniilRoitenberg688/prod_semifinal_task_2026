@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 import uuid
 from fastapi import HTTPException
 import datetime
@@ -48,4 +48,27 @@ class ValidationError(ApiError):
     def __init__(self, status_code, err_code, message, field_errors):
         super().__init__(status_code, err_code, message)
         self.field_errors = field_errors
+
+class DslError(Exception):
+    status_code: int
+    err_code: str
+    message: str
+    position: Optional[str]
+    near: Optional[str]
+    def __init__(self, status_code, err_code: ErrorCode, message, position: Optional[str], near: Optional[str]):
+        self.status_code = status_code
+        self.err_code = err_code.value
+        self.message = message
+        self.position = position
+        self.near = near
+
+    def to_dict(self):
+        return {
+            "code": self.err_code,
+            "message": self.message,
+            "position": self.position,
+            "near": self.near
+        }
+
+
 

@@ -6,13 +6,16 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 
 from src.config import config
-from src.exceptions import ApiError, ErrorCode
+from src.exceptions import ApiError, DslError, ErrorCode
 from src.exceptions import ValidationError as CustomValidationError
 from src.users.routes import auth_router, user_router
 from src.users.schemas import CreateUser, RegisterUser
 from src.users.repository import create_user, get_user_by_email
 from src.database import async_session_maker
 from src.users.models import UserRole
+
+
+from src.fraud_rules.routes import router as rule_router
 
 
 @asynccontextmanager
@@ -100,6 +103,12 @@ async def handle_api_error(r: Request, e: ApiError):
     return JSONResponse(status_code=sc, content=err)
 
 
+@app.exception_handler(DslError)
+async def handle_dsl_error_error(r: Request, e: DslError):
+    err = e.to_dict()
+    return JSONResponse(status_code=e.status_code, content=err)
+
+
 @app.get("/api/v1/ping", tags=["Auth"])
 def ping():
     return {"status": "ok"}
@@ -107,3 +116,4 @@ def ping():
 
 app.include_router(auth_router, tags=["Auth"])
 app.include_router(user_router, tags=["Users"])
+app.include_router(rule_router, tags=["Rules"])
