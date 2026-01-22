@@ -42,6 +42,7 @@ async def create_rule_route(rule_data: CreateRule, current_user:User=Depends(che
 
 @router.post("/validate", status_code=200)
 async def validate_dsl_route(exp: ValidateDSLRequet, current_user:User=Depends(check_token_admin_only) ) -> ValidateDSLResponse:
+    print(exp.dslExpression)
     valid, errors, _ = validate_rule(exp.dslExpression)
     if not valid:
         errs = [i.to_dict() for i in errors]
@@ -91,13 +92,13 @@ async def update_rule_route(id: uuid.UUID, data: UpdateRule, current_user:User=D
             err_code=ErrorCode.not_found,
             message="cannot find rule with this id"
         )
-    rule_with_name = await get_rule_by_name(data.name)
-    if rule_with_name is not  None:
-        raise ApiError(
-            status_code=409,
-            err_code=ErrorCode.rule_name_already_exists,
-            message="exists"
-        )
+#    rule_with_name = await get_rule_by_name(data.name)
+#    if rule_with_name is not None:
+#        raise ApiError(
+#            status_code=409,
+#            err_code=ErrorCode.rule_name_already_exists,
+#            message="exists"
+#        )
 
     await update_rule(rule, data)
     rule_d = to_scheme(rule)

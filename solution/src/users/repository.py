@@ -102,7 +102,7 @@ async def get_user_by_email(email: str) -> User | None:
 
 async def get_users(page: int, size: int) -> list[User]:
     async with async_session_maker() as session:
-        q = select(User).limit(size).offset((page-1) * size)
+        q = select(User).limit(size).offset((page) * size)
         res = await session.scalars(q)
         return list(res.all())
 
