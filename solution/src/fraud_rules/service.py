@@ -10,12 +10,12 @@ from src.exceptions import DslError, ErrorCode
 
 grammar = r"""
 ?expression: term
-           | expression "OR" term   -> or_op
+           | expression OR term      -> or_op
 
 ?term: factor
-     | term "AND" factor            -> and_op
+     | term AND factor               -> and_op
 
-?factor: "NOT" factor               -> not_op
+?factor: NOT factor                  -> not_op
        | comparison
        | "(" expression ")"
 
@@ -28,6 +28,10 @@ FIELD: "amount"
      | "deviceId"
      | "user.age"
      | "user.region"
+
+AND: /(?i:and)/
+OR:  /(?i:or)/
+NOT: /(?i:not)/
 
 OP: ">" | ">=" | "<" | "<=" | "=" | "!="
 

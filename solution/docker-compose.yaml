@@ -19,6 +19,7 @@ services:
       - prod_database_network
 
   backend:
+    platform: "linux/amd64"
     build:
       context: .
       dockerfile: Dockerfile.local
@@ -46,6 +47,7 @@ services:
 
 
   migrate:
+    platform: "linux/amd64"
     build:
       context: .
       dockerfile: Dockerfile.local
