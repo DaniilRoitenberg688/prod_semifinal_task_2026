@@ -15,7 +15,7 @@ from src.users.repository import get_user_by_id
 
 router = APIRouter(prefix="/api/v1/transactions")
 
-@router.post("")
+@router.post("", status_code=201)
 async def create_transaction_route(transaction_data: CreateTranscationRequest, current_user: User = Depends(check_token)) -> CreateTransactionResponse:
     if transaction_data.user_id != current_user.id and current_user.user_role != UserRole.admin:
         raise ApiError(
@@ -28,7 +28,10 @@ async def create_transaction_route(transaction_data: CreateTranscationRequest, c
         raise ApiError(
             status_code=404,
             err_code=ErrorCode.not_found,
-            message="no such user"
+            message="no such user",
+            detail={
+                "userId": transaction_data.user_id
+            }
         )
     data = {
         "amount": transaction_data.amount,
