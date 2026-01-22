@@ -1,4 +1,4 @@
-from src.fraud_rules.schemes import RuleScheme, CreateRule
+from src.fraud_rules.schemes import RuleScheme, CreateRule, UpdateRule
 from src.fraud_rules.models import FraudRule
 from src.database import async_session_maker
 import uuid
@@ -48,8 +48,14 @@ async def get_rules() -> list[FraudRule]:
 
 
 
-async def update_rule(rule: FraudRule):
+async def update_rule(rule: FraudRule, data: UpdateRule):
     async with async_session_maker() as session:
+        rule.name = data.name
+        if data.description is not None:
+            rule.description = data.description
+        rule.enabled = data.enabled
+        rule.dsl_expression = data.dsl_expression
+        rule.priority = data.priority
         session.add(rule)
         await session.commit()
 

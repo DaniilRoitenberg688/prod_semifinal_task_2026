@@ -9,8 +9,8 @@ from src.exceptions import ApiError, ErrorCode
 from src.fraud_rules.service import validate_rule
 from src.fraud_rules.models import FraudRule
 
-from src.fraud_rules.repository import deactivate_rule, get_rule_by_id, get_rule_by_name, get_rules, to_scheme, create_rule
-from src.fraud_rules.schemes import CreateRule, RuleScheme, ValidateDSLRequet, ValidateDSLResponse
+from src.fraud_rules.repository import deactivate_rule, get_rule_by_id, get_rule_by_name, get_rules, to_scheme, create_rule, update_rule
+from src.fraud_rules.schemes import CreateRule, RuleScheme, UpdateRule, ValidateDSLRequet, ValidateDSLResponse
 from src.users.service import check_token_admin_only
 from src.users.models import User
 
@@ -80,6 +80,30 @@ async def delete_rule_route(id: uuid.UUID, current_user:User=Depends(check_token
             message="cannot find such rule"
         )
     await deactivate_rule(rule)
+
+
+@router.put("/{id}", status_code=200)
+async def update_rule_route(id: uuid.UUID, data: UpdateRule, current_user:User=Depends(check_token_admin_only) ) -> RuleScheme:
+    rule = await get_rule_by_id(id)
+    if rule is None:
+        raise ApiError(
+            status_code=404,
+            err_code=ErrorCode.not_found,
+            message="cannot find rule with this id"
+        )
+    rule_with_name = await get_rule_by_name(data.name)
+    if rule_with_name is not  None:
+        raise ApiError(
+            status_code=409,
+            err_code=ErrorCode.rule_name_already_exists,
+            message="exists"
+        )
+
+    await update_rule(rule, data)
+    rule_d = to_scheme(rule)
+    return rule_d
+    
+
 
 
 

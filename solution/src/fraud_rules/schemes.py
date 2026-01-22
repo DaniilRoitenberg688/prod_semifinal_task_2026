@@ -15,6 +15,10 @@ class BaseRule(BaseModel):
 class CreateRule(BaseRule):
     pass
 
+class UpdateRule(CreateRule):
+    description: Optional[str] = Field(default=None, max_length=500)
+
+
 
 class RuleScheme(BaseRule):
     id: uuid.UUID
