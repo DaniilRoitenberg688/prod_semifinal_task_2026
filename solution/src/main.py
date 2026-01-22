@@ -55,7 +55,7 @@ async def validation_error(r: Request, e: ResponseValidationError):
             {
                 "field": i["loc"][1],
                 "issue": i["msg"],
-                "rejected_value": None
+                "rejectedValue": None
                 if i["loc"][1] == "password" or i["loc"][1] == "hashed_password"
                 else i["input"],
             }
