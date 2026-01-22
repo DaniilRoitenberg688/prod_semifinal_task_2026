@@ -48,7 +48,7 @@ async def get_rules() -> list[FraudRule]:
 
 async def get_enabled_rules() -> list[FraudRule]:
     async with async_session_maker() as session:
-        q = select(FraudRule).where(FraudRule.enabled).order_by(FraudRule.id.asc()).order_by(FraudRule.priority.asc())
+        q = select(FraudRule).where(FraudRule.enabled).order_by(FraudRule.priority.asc())
         res = await session.scalars(q)
         return list(res.all())
 

@@ -31,7 +31,7 @@ def check_transaction(
 
     result = ast.eval(transaction)
     desc = f"{rule.dsl_expression} cannot be passed"
-    if result:
+    if not result:
         desc = f"{rule.dsl_expression} passed" 
     return RuleResult(
         ruleId=rule.id,

@@ -7,10 +7,10 @@ from src.transactions.models import TransactionChannel, TransactionStatus
 
 
 class TransactionLocation(BaseModel):
-    country: Optional[str] = None
-    city: Optional[str] = None
-    longitude: Optional[float] = None
-    latitude: Optional[float] = None
+    country: Optional[str] = Field(default=None, min_length=2, max_length=2, pattern="^[A-Z]{2}$")
+    city: Optional[str] = Field(default=None, max_length=128)
+    longitude: Optional[float] = Field(ge=-90, le=90, default=None)
+    latitude: Optional[float] = Field(None,ge=-90, le=90)
 
     @model_validator(mode="after")
     def validate_coords(self) -> 'TransactionLocation':
@@ -33,7 +33,12 @@ class BaseTransaction(BaseModel):
     ip_address: Optional[str] = Field(default=None, max_length=64, alias="ipAddress")
     device_id: Optional[str] = Field(default=None, max_length=128, alias="deviceId")
     channel: Optional[TransactionChannel] = None
-    location: Optional[TransactionLocation] = None
+    location: Optional[TransactionLocation] = TransactionLocation(
+        country=None,
+        city=None,
+        latitude=None,
+        longitude=None
+    )
     metadata: Optional[Any] = None
 
     @field_validator("amount")
