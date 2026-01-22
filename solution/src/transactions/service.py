@@ -1,4 +1,5 @@
 from sqlalchemy.sql import expression
+from sqlalchemy.sql.coercions import expect
 from src.fraud_rules.models import FraudRule
 from src.transactions.schemes import RuleResult, TransactionScheme
 from src.fraud_rules.service import normalize_rule, validate_rule
@@ -28,8 +29,18 @@ def check_transaction(
             description="not valid dsl",
         )
 
+    try: 
+        result = ast.eval(transaction)
+    except Exception as e:
+        return RuleResult(
+            ruleId=rule.id,
+            ruleName=rule.name,
+            priority=rule.priority,
+            matched=False,
+            description=f"cannot eval this rule due to this: {e}",
+        )
+    
 
-    result = ast.eval(transaction)
     desc = f"{rule.dsl_expression} cannot be passed"
     if not result:
         desc = f"{rule.dsl_expression} passed" 

@@ -29,10 +29,21 @@ async def create_transaction_route(transaction_data: CreateTranscationRequest, c
             status_code=404,
             err_code=ErrorCode.not_found,
             message="no such user",
-            detail={
+            details={
                 "userId": str(transaction_data.user_id)
             }
         )
+
+    if not user.is_active:
+        raise ApiError(
+            status_code=403,
+            err_code=ErrorCode.forbidden,
+            message="user is deactivated",
+            details={
+                "userId": str(transaction_data.user_id)
+            }
+        )
+
     data = {
         "amount": transaction_data.amount,
         "currency": transaction_data.currency,

@@ -30,15 +30,15 @@ class ApiError(Exception):
     trace_id: str
     time_stamp: str
     path: str
-    detail: Optional[dict]
+    details: Optional[dict]
 
-    def __init__(self, status_code, err_code: ErrorCode, message, detail: Optional[dict]=None):
+    def __init__(self, status_code, err_code: ErrorCode, message, details: Optional[dict]=None):
         self.status_code = status_code
         self.err_code = err_code.value
         self.message = message
         self.time_stamp = str(datetime.datetime.now())
         self.trace_id = str(uuid.uuid4())
-        self.detail = detail
+        self.details = details
 
 class FieldError(BaseModel):
     field: Any
@@ -47,8 +47,8 @@ class FieldError(BaseModel):
 
 class ValidationError(ApiError):
     field_errors: list[dict]
-    def __init__(self, status_code, err_code, message, field_errors, detail: Optional[dict]=None):
-        super().__init__(status_code, err_code, message, detail)
+    def __init__(self, status_code, err_code, message, field_errors, details: Optional[dict]=None):
+        super().__init__(status_code, err_code, message, details)
         self.field_errors = field_errors
 
 class DslError(Exception):

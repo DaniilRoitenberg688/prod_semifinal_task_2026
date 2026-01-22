@@ -35,7 +35,7 @@ class UserScheme(BaseUser):
     )
     user_role: UserRole = Field(
         default=UserRole.user,
-        validation_alias=AliasChoices("role", "role"),
+        validation_alias=AliasChoices("role", "user_role"),
         alias="role",
     )
     created_at: datetime.datetime = Field(

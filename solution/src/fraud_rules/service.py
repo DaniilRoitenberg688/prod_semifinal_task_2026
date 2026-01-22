@@ -100,6 +100,8 @@ class Comparison(Node):
 
         left = cur
         right = self.value
+        if left is None or right is None:
+            return True
 
         match self.op:
             case "=":
