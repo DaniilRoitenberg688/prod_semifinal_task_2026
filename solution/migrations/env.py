@@ -7,6 +7,7 @@ from alembic import context
 from src.database import url, Base
 from src.users.models import User
 from src.fraud_rules.models import FraudRule
+from src.transactions.models import Transaction
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -1,9 +1,11 @@
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
 import uuid
 from enum import Enum
 import datetime
 from werkzeug.security import check_password_hash, generate_password_hash
+
+from src.transactions.models import Transaction
 
 
 class Gender(Enum):
@@ -43,6 +45,9 @@ class User(Base):
         default=datetime.datetime.now(),
         onupdate=datetime.datetime.now(),
     )
+
+
+    transactions: Mapped[list["Transaction"]] = relationship()
     
     def set_password(self, p: str):
         self.hashed_password = generate_password_hash(p)

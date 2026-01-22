@@ -13,9 +13,8 @@ from src.users.schemas import CreateUser, RegisterUser
 from src.users.repository import create_user, get_user_by_email
 from src.database import async_session_maker
 from src.users.models import UserRole
-
-
 from src.fraud_rules.routes import router as rule_router
+from src.transactions.routes import router as transactions_router
 
 
 @asynccontextmanager
@@ -116,4 +115,5 @@ def ping():
 
 app.include_router(auth_router, tags=["Auth"])
 app.include_router(user_router, tags=["Users"])
+app.include_router(transactions_router, tags=["Transactions"])
 app.include_router(rule_router, tags=["Rules"])

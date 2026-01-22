@@ -52,6 +52,7 @@ parser = Lark(grammar, start="expression", parser="lalr", propagate_positions=Tr
 #                    AST CLASSES
 # =====================================================
 
+
 class Node:
     def eval(self, ctx):
         raise NotImplementedError
@@ -72,6 +73,7 @@ class And(Node):
         self.b = b
 
     def eval(self, ctx):
+        print(self.b)
         return self.a.eval(ctx) and self.b.eval(ctx)
 
 
@@ -100,12 +102,18 @@ class Comparison(Node):
         right = self.value
 
         match self.op:
-            case "=": return left == right
-            case "!=": return left != right
-            case ">": return left > right
-            case ">=": return left >= right
-            case "<": return left < right
-            case "<=": return left <= right
+            case "=":
+                return left == right
+            case "!=":
+                return left != right
+            case ">":
+                return left > right
+            case ">=":
+                return left >= right
+            case "<":
+                return left < right
+            case "<=":
+                return left <= right
 
         raise ValueError(f"Unknown op: {self.op}")
 
@@ -114,11 +122,18 @@ class Comparison(Node):
 #                    AST BUILDER
 # =====================================================
 
-class ASTBuilder(Transformer):
 
-    def or_op(self, args): return Or(args[0], args[1])
-    def and_op(self, args): return And(args[0], args[1])
-    def not_op(self, args): return Not(args[0])
+
+class ASTBuilder(Transformer):
+    def or_op(self, args):
+        return Or(args[0], args[2])
+
+    def and_op(self, args):
+        print(args)
+        return And(args[0], args[2])
+
+    def not_op(self, args):
+        return Not(args[0])
 
     def comparison(self, args):
         field_tok, op_tok, val = args
@@ -131,6 +146,15 @@ class ASTBuilder(Transformer):
 
     def string(self, tok):
         return tok[0][1:-1]
+
+    def expression(self, items):
+        return items[0]
+
+    def term(self, items):
+        return items[0]
+
+    def factor(self, items):
+        return items[0]
 
 
 # =====================================================
@@ -169,44 +193,52 @@ def validate_ast(node, rule_text, errors):
 
         # Неизвестное поле
         if node.field not in FIELD_TYPES:
-            errors.append(DslError(
-                status_code=422,
-                err_code=ErrorCode.dsl_invalid_field,
-                message=f"Неизвестное поле '{node.field}'",
-                position=pos_str,
-                near=get_context(rule_text, line, col),
-            ))
+            errors.append(
+                DslError(
+                    status_code=422,
+                    err_code=ErrorCode.dsl_invalid_field,
+                    message=f"Неизвестное поле '{node.field}'",
+                    position=pos_str,
+                    near=get_context(rule_text, line, col),
+                )
+            )
 
         expected = FIELD_TYPES[node.field]
 
         # Неверный оператор
         if node.op not in NUMERIC_OPS | EQUALITY_OPS:
-            errors.append(DslError(
-                status_code=400,
-                err_code=ErrorCode.dsl_invalid_operator,
-                message=f"Недопустимый оператор '{node.op}'",
-                position=pos_str,
-                near=get_context(rule_text, line, col),
-            ))
+            errors.append(
+                DslError(
+                    status_code=400,
+                    err_code=ErrorCode.dsl_invalid_operator,
+                    message=f"Недопустимый оператор '{node.op}'",
+                    position=pos_str,
+                    near=get_context(rule_text, line, col),
+                )
+            )
 
         # Типы
         if expected == "number" and isinstance(node.value, str):
-            errors.append(DslError(
-                status_code=422,
-                err_code=ErrorCode.dsl_invalid_field,
-                message=f"Поле '{node.field}' числовое, но сравнивается со строкой '{node.value}'",
-                position=pos_str,
-                near=get_context(rule_text, line, col),
-            ))
+            errors.append(
+                DslError(
+                    status_code=422,
+                    err_code=ErrorCode.dsl_invalid_field,
+                    message=f"Поле '{node.field}' числовое, но сравнивается со строкой '{node.value}'",
+                    position=pos_str,
+                    near=get_context(rule_text, line, col),
+                )
+            )
 
         if expected == "string" and node.op in NUMERIC_OPS:
-            errors.append(DslError(
-                status_code=422,
-                err_code=ErrorCode.dsl_invalid_field,
-                message=f"Строковое поле '{node.field}' нельзя сравнивать оператором '{node.op}'",
-                position=pos_str,
-                near=get_context(rule_text, line, col),
-            ))
+            errors.append(
+                DslError(
+                    status_code=422,
+                    err_code=ErrorCode.dsl_invalid_field,
+                    message=f"Строковое поле '{node.field}' нельзя сравнивать оператором '{node.op}'",
+                    position=pos_str,
+                    near=get_context(rule_text, line, col),
+                )
+            )
 
         return
 
@@ -214,6 +246,7 @@ def validate_ast(node, rule_text, errors):
 # =====================================================
 #               EXTRACT CONTEXT FOR ERROR
 # =====================================================
+
 
 def get_context(text, line, col):
     lines = text.split("\n")
@@ -228,6 +261,7 @@ def get_context(text, line, col):
 #                    VALIDATE RULE
 # =====================================================
 
+
 def validate_rule(rule: str) -> Tuple[bool, list, Optional[Node]]:
     """
     Если правило плохое — бросает DslError.
@@ -239,13 +273,15 @@ def validate_rule(rule: str) -> Tuple[bool, list, Optional[Node]]:
     try:
         tree = parser.parse(rule)
     except UnexpectedInput as e:
-        errors.append(DslError(
-            status_code=422,
-            err_code=ErrorCode.dsl_parse_error,
-            message="Синтаксическая ошибка",
-            position=f"{e.line}:{e.column}",
-            near=e.get_context(rule)
-        ))
+        errors.append(
+            DslError(
+                status_code=422,
+                err_code=ErrorCode.dsl_parse_error,
+                message="Синтаксическая ошибка",
+                position=f"{e.line}:{e.column}",
+                near=e.get_context(rule),
+            )
+        )
         return False, errors, None
 
     # --- AST -----------------------------------------
@@ -257,11 +293,6 @@ def validate_rule(rule: str) -> Tuple[bool, list, Optional[Node]]:
         return False, errors, None
 
     return True, errors, ast  # валидно
-
-
-
-
-
 
 
 class NormalizeTransformer(Transformer):
@@ -318,12 +349,9 @@ class NormalizeTransformer(Transformer):
         return items[0]
 
 
-
 def normalize_rule(rule: str) -> str:
     tree = parser.parse(rule)
     return NormalizeTransformer().transform(tree)
-
-
 
 
 # =====================================================
@@ -338,4 +366,3 @@ if __name__ == "__main__":
         print("VALID:", ast)
     except DslError as e:
         print("!!! DSL ERROR:")
-
