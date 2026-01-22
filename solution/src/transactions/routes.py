@@ -30,7 +30,7 @@ async def create_transaction_route(transaction_data: CreateTranscationRequest, c
             err_code=ErrorCode.not_found,
             message="no such user",
             detail={
-                "userId": transaction_data.user_id
+                "userId": str(transaction_data.user_id)
             }
         )
     data = {

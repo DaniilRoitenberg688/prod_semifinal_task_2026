@@ -53,7 +53,7 @@ async def validation_error(r: Request, e: ResponseValidationError):
 
         fields.append(
             {
-                "field": i["loc"][1],
+                "field": ".".join(i["loc"][1:]),
                 "issue": i["msg"],
                 "rejectedValue": None
                 if i["loc"][1] == "password" or i["loc"][1] == "hashed_password"

@@ -92,7 +92,7 @@ async def get_all_users(
 
 @user_router.post("", status_code=201)
 async def create_user_admin(
-    user_data: RegisterUser, current_user: User = Depends(check_token_admin_only)
+    user_data: CreateUser, current_user: User = Depends(check_token_admin_only)
 ) -> UserScheme:
     u = await get_user_by_email(user_data.email)
     if u is not None:
@@ -101,9 +101,7 @@ async def create_user_admin(
             err_code=ErrorCode.email_already_exists,
             message="user already exists",
         )
-    print("i am creating user")
-    user_data_cr = CreateUser(**user_data.model_dump())
-    user: User = await create_user(user_data_cr)
+    user: User = await create_user(user_data)
     user_out: UserScheme = to_scheme(user)
     return user_out
 
