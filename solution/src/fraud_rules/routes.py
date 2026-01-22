@@ -6,7 +6,7 @@ from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 from src.exceptions import ApiError, ErrorCode
-from src.fraud_rules.service import validate_rule
+from src.fraud_rules.service import normalize_rule, validate_rule
 from src.fraud_rules.models import FraudRule
 
 from src.fraud_rules.repository import deactivate_rule, get_rule_by_id, get_rule_by_name, get_rules, to_scheme, create_rule, update_rule
@@ -51,9 +51,10 @@ async def validate_dsl_route(exp: ValidateDSLRequet, current_user:User=Depends(c
             normalizedExpression="",
             errors=errs
         )
+    normis = normalize_rule(exp.dslExpression)
     return ValidateDSLResponse(
         isValid=True,
-        normalizedExpression=exp.dslExpression,
+        normalizedExpression=normis,
         errors=[]
     )
 

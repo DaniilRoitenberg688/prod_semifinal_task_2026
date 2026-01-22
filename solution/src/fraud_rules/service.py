@@ -1,6 +1,6 @@
 from os import stat
 from typing import Optional, Tuple
-from lark import Lark, Transformer, UnexpectedInput
+from lark import Lark, Transformer, UnexpectedInput, Token
 from src.exceptions import DslError, ErrorCode
 
 
@@ -257,6 +257,73 @@ def validate_rule(rule: str) -> Tuple[bool, list, Optional[Node]]:
         return False, errors, None
 
     return True, errors, ast  # валидно
+
+
+
+
+
+
+
+class NormalizeTransformer(Transformer):
+    def FIELD(self, token: Token):
+        return token.value
+
+    def OP(self, token: Token):
+        return token.value
+
+    def number(self, items):
+        return items[0].value
+
+    def string(self, items):
+        return f"'{items[0].value[1:-1]}'"
+
+    def comparison(self, items):
+        field, op, value = items
+        return f"{field} {op} {value}"
+
+    # AND aggregator
+    def and_op(self, items):
+        parts = []
+        for item in items:
+            if isinstance(item, str):
+                # skip operator tokens accidentally passed
+                if item.upper() == "AND":
+                    continue
+            parts.append(item)
+        # join them
+        return " AND ".join(parts)
+
+    # OR aggregator
+    def or_op(self, items):
+        parts = []
+        for item in items:
+            if isinstance(item, str):
+                if item.upper() == "OR":
+                    continue
+            parts.append(item)
+        return " OR ".join(parts)
+
+    def not_op(self, items):
+        expr = items[0]
+        return f"NOT {expr}"
+
+    # Needed to unwrap parentheses properly
+    def factor(self, items):
+        return items[0]
+
+    def term(self, items):
+        return items[0]
+
+    def expression(self, items):
+        return items[0]
+
+
+
+def normalize_rule(rule: str) -> str:
+    tree = parser.parse(rule)
+    return NormalizeTransformer().transform(tree)
+
+
 
 
 # =====================================================
