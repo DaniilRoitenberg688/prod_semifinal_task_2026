@@ -1,10 +1,14 @@
+from __future__ import annotations
 from enum import Enum
 from sqlalchemy import JSON, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
 import uuid
 import datetime
-from typing import Dict, Any
+from typing import List, Dict, Any, TYPE_CHECKING
+
+
+from src.transaction_result.models import TransactionRuleResult
 
 
 
@@ -41,4 +45,5 @@ class Transaction(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         nullable=False, default=datetime.datetime.now()
     )
+
 

@@ -2,6 +2,7 @@ from typing import Optional, Any
 from pydantic import BaseModel, Field, field_validator, model_validator
 import datetime
 import uuid
+from src.transaction_result.schemes import RuleResult
 
 from src.transactions.models import TransactionChannel, TransactionStatus
 
@@ -69,13 +70,7 @@ class CreateTranscation(BaseTransaction):
 class CreateTranscationRequest(BaseTransaction):
     pass
 
-class RuleResult(BaseModel):
-    ruleId: uuid.UUID
-    ruleName: str
-    priority: int
-    matched: bool
-    description: str
 
-class CreateTransactionResponse(BaseModel):
+class TransactionResponse(BaseModel):
     transaction: TransactionScheme
     ruleResults: list[RuleResult]

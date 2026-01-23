@@ -4,6 +4,7 @@ from typing import Optional
 from sqlalchemy import select
 from src.transactions.schemes import TransactionScheme, CreateTranscation, TransactionLocation
 from src.transactions.models import Transaction
+from src.transaction_result.models import TransactionRuleResult
 
 
 def to_scheme_transaction(transaction: Transaction) -> TransactionScheme:
@@ -32,6 +33,12 @@ async def create_transaction(transaction_data: CreateTranscation) -> Transaction
         await session.commit()
         await session.refresh(transaction)
         return transaction
+
+async def get_transaction_all_rule_results(transaction: Transaction) -> list[TransactionRuleResult]:
+    async with async_session_maker() as session:
+        q = select(TransactionRuleResult).where(TransactionRuleResult.transaction_id==transaction.id)
+        res = await session.scalars(q)
+        return list(res.all())
         
 
 
