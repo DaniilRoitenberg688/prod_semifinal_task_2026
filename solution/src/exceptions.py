@@ -1,10 +1,10 @@
 from enum import Enum
 from typing import Any, Optional
 import uuid
-from fastapi import HTTPException
 import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ValidationError as PydanticValidationError
+from regex import P
 
 
 
@@ -61,6 +61,21 @@ class ValidationError(ApiError):
     def __init__(self, status_code, err_code, message, field_errors, details: Optional[dict]=None):
         super().__init__(status_code, err_code, message, details)
         self.field_errors = field_errors
+
+    def to_dict(self, path: str):
+
+            
+        return {
+            "code": self.err_code,
+            "message": self.message,
+            "traceId": self.trace_id,
+            "timestamp": self.time_stamp,
+            "path": path,
+            "details": self.details,
+            "fieldErrors": self.field_errors
+        }
+
+
 
 class DslError(Exception):
     status_code: int

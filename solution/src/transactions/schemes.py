@@ -77,7 +77,7 @@ class TransactionResponse(BaseModel):
 
 
 class CreateBatchTransactions(BaseModel):
-    items: list[CreateTranscationRequest] = Field(max_length=500, min_length=1)
+    items: list[dict] = Field(max_length=500, min_length=1)
 
 
 class TransactionBatchResult(BaseModel):

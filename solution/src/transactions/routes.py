@@ -1,9 +1,9 @@
 from typing import Optional
 import uuid
 from fastapi import APIRouter, Depends, Response, status
-from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
-from src.exceptions import ApiError, ErrorCode
+from src.exceptions import ApiError, ErrorCode, ValidationError as CustomValidationError
 from src.fraud_rules.repository import get_enabled_rules
 from src.transactions.schemes import (
     BatchResponse,
@@ -158,7 +158,49 @@ async def create_batch(
 ) -> BatchResponse:
     result: list[TransactionBatchResult] = []
     is_error = False
-    for index, trans in enumerate(batch_data.items):
+    for index, trans_raw in enumerate(batch_data.items):
+        try:
+            trans = CreateTranscationRequest.model_validate(trans_raw)
+        except ValidationError as e:
+            fields = []
+            for i in e.errors():
+                if i["type"] in ["json_invalid", "model_attributes_type"]:
+                    result.append(
+                        TransactionBatchResult(
+                            index=index,
+                            error=ApiError(
+                                status_code=400,
+                                err_code=ErrorCode.bad_request,
+                                message="invalid json",
+                            ).to_dict("/api/v1/transactions/batch"),
+                        )
+                    )
+
+                print(i["loc"])
+                fields.append(
+                    {
+                        "field": ".".join(map(str, ["body", "items", index, *i["loc"]][1:])),
+                        "issue": i["msg"],
+                        "rejectedValue": i["input"],
+                    }
+                )
+
+            is_error = True
+            result.append(
+                TransactionBatchResult(
+                    index=index,
+                    error=CustomValidationError(
+                        status_code=422,
+                        err_code=ErrorCode.validation_failed,
+                        message="cannot validate data",
+                        field_errors=fields,
+                    )
+                    .to_dict("/api/v1/transactions/batch"),
+                )
+            )
+            continue
+
+
         if current_user.user_role == UserRole.user:
             trans.user_id = current_user.id
 
