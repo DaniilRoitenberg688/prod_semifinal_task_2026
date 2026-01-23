@@ -74,3 +74,17 @@ class CreateTranscationRequest(BaseTransaction):
 class TransactionResponse(BaseModel):
     transaction: TransactionScheme
     ruleResults: list[RuleResult]
+
+
+class CreateBatchTransactions(BaseModel):
+    items: list[CreateTranscationRequest] = Field(max_length=500, min_length=1)
+
+
+class TransactionBatchResult(BaseModel):
+    index: int
+    decision: Optional[TransactionResponse] = None
+    error: Optional[dict] = None
+
+
+class BatchResponse(BaseModel):
+    items: list[TransactionBatchResult]

@@ -1,3 +1,4 @@
+from sqlalchemy.sql import expression
 from src.fraud_rules.models import FraudRule
 from src.transaction_result.schemes import RuleResult 
 from src.fraud_rules.service import normalize_rule, validate_rule
@@ -10,16 +11,16 @@ def check_transaction(transaction: dict, rule: FraudRule
     print("ast", ast)
     if not valid:
         return RuleResult(
-            rule_id=rule.id,
-            rule_name=rule.name,
+            ruleId=rule.id,
+            ruleName=rule.name,
             priority=rule.priority,
             matched=False,
             description="not valid dsl",
         )
     if ast is None:
         return RuleResult(
-            rule_id=rule.id,
-            rule_name=rule.name,
+            ruleId=rule.id,
+            ruleName=rule.name,
             priority=rule.priority,
             matched=False,
             description="not valid dsl",
@@ -29,8 +30,8 @@ def check_transaction(transaction: dict, rule: FraudRule
         result = ast.eval(transaction)
     except Exception as e:
         return RuleResult(
-            rule_id=rule.id,
-            rule_name=rule.name,
+            ruleId=rule.id,
+            ruleName=rule.name,
             priority=rule.priority,
             matched=False,
             description=f"cannot eval this rule due to this: {e}",
@@ -41,8 +42,8 @@ def check_transaction(transaction: dict, rule: FraudRule
     if not result:
         desc = f"{rule.dsl_expression} passed" 
     return RuleResult(
-        rule_id=rule.id,
-        rule_name=rule.name,
+        ruleId=rule.id,
+        ruleName=rule.name,
         priority=rule.priority,
         matched=result,
         description=desc,

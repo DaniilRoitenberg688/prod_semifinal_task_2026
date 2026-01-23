@@ -40,6 +40,17 @@ class ApiError(Exception):
         self.trace_id = str(uuid.uuid4())
         self.details = details
 
+    def to_dict(self, path):
+        return {
+            "code": self.err_code,
+            "message": self.message,
+            "traceId": self.trace_id,
+            "timestamp": self.time_stamp,
+            "path": path,
+            "details": self.details
+        }
+        
+
 class FieldError(BaseModel):
     field: Any
     issue: str
