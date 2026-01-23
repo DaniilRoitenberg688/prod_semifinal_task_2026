@@ -35,7 +35,7 @@ class Transaction(Base):
     timestamp: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), nullable=False )
     ip_address:  Mapped[str] = mapped_column(nullable=True)
     device_id:  Mapped[str] = mapped_column(nullable=True)
-    channel: Mapped[TransactionChannel] = mapped_column(nullable=False)
+    channel: Mapped[TransactionChannel] = mapped_column(nullable=True)
     country:  Mapped[str] = mapped_column(nullable=True)
     city:  Mapped[str] = mapped_column(nullable=True)
     latitude:  Mapped[float] = mapped_column(nullable=True)
