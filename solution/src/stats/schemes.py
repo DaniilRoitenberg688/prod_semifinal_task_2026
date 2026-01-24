@@ -20,7 +20,7 @@ class StatsOverviewIn(BaseModel):
 
 
 class MerchantRiskRow(BaseModel):
-    merchantId: str
+    merchantId: Optional[str]
     merchantCategoryCode: Optional[str] = None
     txCount: int
     gmv: float
@@ -84,3 +84,9 @@ class RulesStatsIn(StatsOverviewIn):
 
 class RuleStatsOut(BaseModel):
     items: list[RuleMatchRow]
+
+class RiskMerchantIn(StatsOverviewIn):
+    top: int = 50
+
+class RiskMerchantOut(BaseModel):
+    items: list[MerchantRiskRow]

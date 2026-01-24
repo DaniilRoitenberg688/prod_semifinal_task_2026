@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, Query
 from src.exceptions import ApiError, ErrorCode
 from src.stats.schemes import (
     GroupByEnum,
+    MerchantRiskRow,
+    RiskMerchantIn,
+    RiskMerchantOut,
     RulesStatsIn,
     RuleStatsOut,
     StatsGroupBy,
@@ -12,8 +15,17 @@ from src.stats.schemes import (
     TimePoint,
     TimePointsOut,
 )
-from src.stats.service import get_merchants, get_rates, get_transactions_sum, get_rules_stats
-from src.transactions.repository import get_all_transactions_stats
+from src.stats.service import (
+    get_merchants,
+    get_rates,
+    get_transactions_sum,
+    get_rules_stats,
+    merchant_get_risk,
+)
+from src.transactions.repository import (
+    get_all_transactions_grouped_by_merchant,
+    get_all_transactions_stats,
+)
 from src.users.models import User
 from src.users.service import check_token_admin_only
 
@@ -21,7 +33,10 @@ router = APIRouter(prefix="/api/v1/stats")
 
 
 @router.get("/overview")
-async def get_overview(filter_params: Annotated[StatsOverviewIn, Query()], current_user: User = Depends(check_token_admin_only)) -> StatsOverviewOut:
+async def get_overview(
+    filter_params: Annotated[StatsOverviewIn, Query()],
+    current_user: User = Depends(check_token_admin_only),
+) -> StatsOverviewOut:
     transactions = await get_all_transactions_stats(filter_params)
     gmv = await get_transactions_sum(transactions)
     apr, der = await get_rates(transactions)
@@ -33,19 +48,22 @@ async def get_overview(filter_params: Annotated[StatsOverviewIn, Query()], curre
         gmv=gmv,
         approvalRate=apr,
         declineRate=der,
-        topRiskMerchants=merchs[:10]
+        topRiskMerchants=merchs[:10],
     )
 
 
 @router.get("/transactions/timeseries")
-async def timeseries(filter_params: Annotated[StatsGroupBy, Query()], current_user: User = Depends(check_token_admin_only)) -> TimePointsOut:
+async def timeseries(
+    filter_params: Annotated[StatsGroupBy, Query()],
+    current_user: User = Depends(check_token_admin_only),
+) -> TimePointsOut:
     if filter_params.from_time is None:
         raise ApiError(
             status_code=422,
             err_code=ErrorCode.validation_failed,
             message="cannot validate",
         )
-    last = filter_params.from_time  
+    last = filter_params.from_time
     next = filter_params.from_time + GroupByEnum[filter_params.groupBy].value
     points: list[TimePoint] = []
     while next < filter_params.to:
@@ -61,12 +79,11 @@ async def timeseries(filter_params: Annotated[StatsGroupBy, Query()], current_us
                     txCount=len(transactions),
                     gmv=gmv,
                     approvalRate=apr,
-                    declineRate=der
+                    declineRate=der,
                 )
             )
         last = next
         next += GroupByEnum[filter_params.groupBy].value
-
 
     f = StatsOverviewIn().model_validate({"from": next, "to": filter_params.to})
 
@@ -80,19 +97,29 @@ async def timeseries(filter_params: Annotated[StatsGroupBy, Query()], current_us
                 txCount=len(transactions),
                 gmv=gmv,
                 approvalRate=apr,
-                declineRate=der
+                declineRate=der,
             )
         )
-
 
     return TimePointsOut(points=points)
 
 
-
 @router.get("/rules/matches")
-async def rule_stats(filter: Annotated[RulesStatsIn, Query()], current_user: User = Depends(check_token_admin_only))  -> RuleStatsOut:
+async def rule_stats(
+    filter: Annotated[RulesStatsIn, Query()],
+    current_user: User = Depends(check_token_admin_only),
+) -> RuleStatsOut:
     items = await get_rules_stats(filter)
     return RuleStatsOut(items=items)
-        
 
-    
+
+@router.get("/merchants/risk")
+async def risk_merchants(
+    filter: Annotated[RiskMerchantIn, Query()],
+    current_user: User = Depends(check_token_admin_only),
+) -> RiskMerchantOut:
+    d = await merchant_get_risk(filter)
+    return RiskMerchantOut(items=d)
+
+
+
