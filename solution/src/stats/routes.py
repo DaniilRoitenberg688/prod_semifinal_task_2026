@@ -11,7 +11,7 @@ from src.stats.service import get_merchants, get_rates, get_transactions_sum
 router = APIRouter(prefix="/api/v1/stats")
 
 
-@router.get("/overvoiew")
+@router.get("/overview")
 async def get_overview(filter_params: Annotated[StatsOverviewIn, Query()], current_user: User = Depends(check_token_admin_only)) -> StatsOverviewOut:
     transactions = await get_all_transactions_stats(filter_params)
     gmv = await get_transactions_sum(transactions)
