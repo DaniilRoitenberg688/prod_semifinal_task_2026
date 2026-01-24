@@ -1,5 +1,5 @@
 from typing import Tuple
-from src.fraud_rules.repository import get_all_rule_results_stats, get_rules
+from src.fraud_rules.repository import get_all_rule_results_stats, get_rule_all_results, get_rules
 from src.transactions.models import Transaction, TransactionStatus
 from src.stats.schemes import MerchantRiskRow, RuleMatchRow, RulesStatsIn, StatsOverviewIn
 
@@ -49,15 +49,21 @@ async def get_rules_stats(filter: RulesStatsIn) -> list[RuleMatchRow]:
     rules = await get_rules()
     items: list[RuleMatchRow] = []
     for r in rules:
-        ress = await get_all_rule_results_stats(filter)
+        ress = await get_rule_all_results(r)
         if not ress:
             continue
         users = set()
         merchants = set()
         matched = 0
         for res in ress:
-            matched += int(res.matched)
             tr = await get_transaction_by_id(res.transaction_id)
+            if tr is None:
+                continue
+            if filter.from_time is None:
+                continue
+            if not ( filter.from_time <= tr.timestamp < filter.to):
+                continue
+            matched += int(res.matched)
             if tr is None:
                  continue
             users.add(tr.user_id)
