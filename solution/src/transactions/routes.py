@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Annotated, Optional
 import uuid
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Query, Response, responses, status
 from pydantic import ValidationError
 
 from src.exceptions import ApiError, ErrorCode, ValidationError as CustomValidationError
@@ -8,6 +8,8 @@ from src.fraud_rules.repository import get_enabled_rules
 from src.transactions.schemes import (
     BatchResponse,
     CreateBatchTransactions,
+    FilterTransactionsQuery,
+    PagedTransactions,
     TransactionBatchResult,
     TransactionResponse,
     CreateTranscation,
@@ -22,6 +24,7 @@ from src.transactions.service import check_transaction
 from src.transactions.models import TransactionStatus
 from src.transactions.repository import (
     create_transaction,
+    get_all_transactions,
     get_transaction_all_rule_results,
     to_scheme_transaction,
     get_transaction_by_id,
@@ -63,7 +66,7 @@ async def create_transaction_route(
     if not user.is_active:
         raise ApiError(
             status_code=403,
-            err_code=ErrorCode.forbidden,
+            err_code=ErrorCode.user_inactive,
             message="user is deactivated",
             details={"userId": str(transaction_data.user_id)},
         )
@@ -104,6 +107,32 @@ async def create_transaction_route(
     return TransactionResponse(transaction=transaction_out, ruleResults=rules_results)
 
 
+@router.get("")
+async def get_all_transactions_routes(
+    filter_params: Annotated[FilterTransactionsQuery, Query()],
+    current_user=Depends(check_token),
+) -> PagedTransactions:
+    if current_user.user_role == UserRole.user:
+        filter_params.userId = current_user.user_id
+    transactions = await get_all_transactions(filter_params)
+    items: list[TransactionResponse] = []
+    for t in transactions:
+        results = await get_transaction_all_rule_results(t)
+        results_sc = [to_scheme_transaction_result(i) for i in results]
+        items.append(
+            TransactionResponse(
+                transaction=to_scheme_transaction(t), ruleResults=results_sc
+            )
+        )
+
+    return PagedTransactions(
+        items=items,
+        total=len(items),
+        page=filter_params.page,
+        size=filter_params.size
+    )
+
+
 @router.get("/{id}")
 async def get_transactions_by_id_route(
     id: uuid.UUID, current_user: User = Depends(check_token)
@@ -138,7 +167,7 @@ async def get_transactions_by_id_route(
     if not user.is_active:
         raise ApiError(
             status_code=403,
-            err_code=ErrorCode.forbidden,
+            err_code=ErrorCode.user_inactive,
             message="user is deactivated",
             details={"userId": str(transaction_data.user_id)},
         )
@@ -179,7 +208,9 @@ async def create_batch(
                 print(i["loc"])
                 fields.append(
                     {
-                        "field": ".".join(map(str, ["body", "items", index, *i["loc"]][1:])),
+                        "field": ".".join(
+                            map(str, ["body", "items", index, *i["loc"]][1:])
+                        ),
                         "issue": i["msg"],
                         "rejectedValue": i["input"],
                     }
@@ -194,12 +225,10 @@ async def create_batch(
                         err_code=ErrorCode.validation_failed,
                         message="cannot validate data",
                         field_errors=fields,
-                    )
-                    .to_dict("/api/v1/transactions/batch"),
+                    ).to_dict("/api/v1/transactions/batch"),
                 )
             )
             continue
-
 
         if current_user.user_role == UserRole.user:
             trans.user_id = current_user.id
@@ -227,7 +256,7 @@ async def create_batch(
                     index=index,
                     error=ApiError(
                         status_code=403,
-                        err_code=ErrorCode.forbidden,
+                        err_code=ErrorCode.user_inactive,
                         message="user is deactivated",
                         details={"userId": trans.user_id},
                     ).to_dict("/api/v1/transactions/batch"),

@@ -88,3 +88,28 @@ class TransactionBatchResult(BaseModel):
 
 class BatchResponse(BaseModel):
     items: list[TransactionBatchResult]
+
+
+class PagedTransactions(BaseModel):
+    items: list[TransactionResponse]
+    total: int
+    page: int
+    size: int
+
+
+class FilterTransactionsQuery(BaseModel):
+    userId: Optional[uuid.UUID] = None
+    status: Optional[TransactionStatus] = None
+    isFraud: Optional[bool] = None
+    from_time: Optional[datetime.datetime] = Field(default=None, alias="from")
+    to: Optional[datetime.datetime] = None
+    page: int = 0
+    size: int = 20
+
+    @model_validator(mode="after")
+    def validate_time(self) -> 'FilterTransactionsQuery':
+        if not (self.from_time is not None and self.to is not None):
+            return self
+        if self.to - self.from_time > datetime.timedelta(days=90):
+            raise ValueError
+        return self
