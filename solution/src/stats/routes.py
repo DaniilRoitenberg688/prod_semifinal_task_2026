@@ -90,7 +90,7 @@ async def timeseries(filter_params: Annotated[StatsGroupBy, Query()], current_us
 
 
 @router.get("/rules/matches")
-async def rule_stats(filter: RulesStatsIn) -> RuleStatsOut:
+async def rule_stats(filter: Annotated[RulesStatsIn, Query()], current_user: User = Depends(check_token_admin_only))  -> RuleStatsOut:
     items = await get_rules_stats(filter)
     return RuleStatsOut(items=items)
         

@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
 import uuid
@@ -15,7 +15,7 @@ class TransactionRuleResult(Base):
     description: Mapped[str] = mapped_column()
     matched: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
-        nullable=False, default=datetime.datetime.now()
+     DateTime(timezone=True), nullable=False, default=datetime.datetime.now()
     )
 
 
