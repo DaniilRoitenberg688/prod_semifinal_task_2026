@@ -6,9 +6,16 @@ from src.fraud_rules.service import normalize_rule, validate_rule
 
 def check_transaction(transaction: dict, rule: FraudRule
 ) -> RuleResult:
-    valid, _, ast = validate_rule(rule.dsl_expression)
-    print("exp", normalize_rule(rule.dsl_expression))
-    print("ast", ast)
+    try:
+        valid, _, ast = validate_rule(rule.dsl_expression)
+    except Exception as e:
+        return RuleResult(
+            ruleId=rule.id,
+            ruleName=rule.name,
+            priority=rule.priority,
+            matched=False,
+            description="not valid dsl",
+        )
     if not valid:
         return RuleResult(
             ruleId=rule.id,

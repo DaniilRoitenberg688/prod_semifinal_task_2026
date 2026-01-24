@@ -35,7 +35,7 @@ auth_router = APIRouter(prefix="/api/v1/auth")
 
 
 @auth_router.post("/register", status_code=201)
-async def register_user(user_data: RegisterUser) -> UserOut:
+async def register_user(user_data: RegisterUser) -> UserOutWithExp:
     u = await get_user_by_email(user_data.email)
     print(u)
     if u is not None:
@@ -49,7 +49,7 @@ async def register_user(user_data: RegisterUser) -> UserOut:
     user: User = await create_user(user_data_cr)
     user_out: UserScheme = to_scheme(user)
     token: str = create_token(user)
-    return UserOut(accessToken=token, user=user_out)
+    return UserOutWithExp(accessToken=token, user=user_out, expiresIn=3600)
 
 
 @auth_router.post("/login", status_code=200)

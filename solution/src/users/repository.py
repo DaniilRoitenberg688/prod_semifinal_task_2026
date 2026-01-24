@@ -116,6 +116,7 @@ async def update_user(user: User, data: UpdateUser):
         user.age = data.age
         user.gender = data.gender
         user.region = data.region
+        user.marital_status = data.marital_status
         session.add(user)
         await session.commit()
 

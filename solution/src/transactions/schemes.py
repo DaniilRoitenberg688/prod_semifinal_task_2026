@@ -102,13 +102,15 @@ class FilterTransactionsQuery(BaseModel):
     status: Optional[TransactionStatus] = None
     isFraud: Optional[bool] = None
     from_time: Optional[datetime.datetime] = Field(default=None, alias="from")
-    to: Optional[datetime.datetime] = None
+    to: datetime.datetime = datetime.datetime.now(datetime.timezone.utc) 
     page: int = 0
     size: int = 20
 
     @model_validator(mode="after")
     def validate_time(self) -> 'FilterTransactionsQuery':
-        if not (self.from_time is not None and self.to is not None):
+        print(self.from_time)
+        if self.from_time is None:
+            self.from_time = self.to - datetime.timedelta(days=90)
             return self
         if self.to - self.from_time > datetime.timedelta(days=90):
             raise ValueError

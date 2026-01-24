@@ -15,6 +15,7 @@ from src.database import async_session_maker
 from src.users.models import UserRole
 from src.fraud_rules.routes import router as rule_router
 from src.transactions.routes import router as transactions_router
+from src.stats.routes import router as stats_router
 
 
 @asynccontextmanager
@@ -50,13 +51,21 @@ async def validation_error(r: Request, e: ResponseValidationError):
             errd.pop("status_code")
             errd["path"] = r.url.path
             return JSONResponse(content=errd, status_code=400)
+        if len(i["loc"]) <= 1:
+            fields.append(
+                {
+                    "field": i["loc"],
+                    "issue": i["msg"],
+                    "rejectedValue": i["input"],
+                }
+            )
 
         fields.append(
             {
                 "field": ".".join(map(str, i["loc"][1:])),
                 "issue": i["msg"],
                 "rejectedValue": None
-                if i["loc"][1] == "password" or i["loc"][1] == "hashed_password"
+                if "password" in i["loc"] or "hashed_password" in i["loc"]
                 else i["input"],
             }
         )
@@ -117,3 +126,4 @@ app.include_router(auth_router, tags=["Auth"])
 app.include_router(user_router, tags=["Users"])
 app.include_router(transactions_router, tags=["Transactions"])
 app.include_router(rule_router, tags=["Rules"])
+app.include_router(stats_router, tags=["Stats"])

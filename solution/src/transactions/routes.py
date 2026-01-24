@@ -113,7 +113,7 @@ async def get_all_transactions_routes(
     current_user=Depends(check_token),
 ) -> PagedTransactions:
     if current_user.user_role == UserRole.user:
-        filter_params.userId = current_user.user_id
+        filter_params.userId = current_user.id
     transactions = await get_all_transactions(filter_params)
     items = [to_scheme_transaction(t) for t in transactions]
     return PagedTransactions(

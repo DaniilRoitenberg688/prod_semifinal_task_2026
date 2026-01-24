@@ -8,7 +8,7 @@ import uuid
 class BaseRule(BaseModel):
     name: str = Field(min_length=3, max_length=120)
     description: Optional[str] = Field(max_length=500)
-    dsl_expression: str = Field(min_length=3, max_length=2000, validation_alias=AliasChoices("dsl_expression", "dslExpression"))
+    dsl_expression: str = Field(min_length=3, max_length=2000, validation_alias=AliasChoices("dsl_expression", "dslExpression"), alias="dslExpression")
     enabled: bool = Field(default=True)
     priority: int = Field(ge=1, default=100)
 

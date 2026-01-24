@@ -5,6 +5,7 @@ from sqlalchemy import select
 from src.transactions.schemes import FilterTransactionsQuery, TransactionScheme, CreateTranscation, TransactionLocation
 from src.transactions.models import Transaction
 from src.transaction_result.models import TransactionRuleResult
+from src.stats.schemes import StatsOverviewIn
 
 
 def to_scheme_transaction(transaction: Transaction) -> TransactionScheme:
@@ -76,17 +77,23 @@ async def get_all_transactions(filters: FilterTransactionsQuery) -> list[Transac
         if filters.isFraud is not None:
             q = q.where(Transaction.is_fraud == filters.isFraud)
         if filters.from_time is not None:
-            q = q.where(Transaction.timestamp <= filters.from_time)
+            q = q.where(Transaction.timestamp >= filters.from_time)
         if filters.to is not None:
             q = q.where(Transaction.timestamp <= filters.to)
         q = q.order_by(Transaction.timestamp.desc()).offset(filters.page * filters.size).limit(filters.size)
         res = await session.scalars(q)
         return list(res.all())
+
+
+
+async def get_all_transactions_stats(filters: StatsOverviewIn) -> list[Transaction]:
+    async with async_session_maker() as session:
+        q = select(Transaction)
+        if filters.from_time is not None:
+            q = q.where(Transaction.timestamp >= filters.from_time)
+        if filters.to is not None:
+            q = q.where(Transaction.timestamp <= filters.to)
+        q = q.order_by(Transaction.timestamp.desc())
+        res = await session.scalars(q)
+        return list(res.all())
         
-
-
-
-
-
-
-

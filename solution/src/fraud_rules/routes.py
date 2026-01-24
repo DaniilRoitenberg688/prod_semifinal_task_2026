@@ -34,8 +34,8 @@ async def create_rule_route(rule_data: CreateRule, current_user:User=Depends(che
             message="exists"
         )
     valid, errors, _ = validate_rule(rule_data.dsl_expression)
-    if not valid:
-        raise errors[0]
+#    if not valid:
+#        raise errors[0]
     rule: FraudRule = await create_rule(rule_data)
     return to_scheme(rule)
 
