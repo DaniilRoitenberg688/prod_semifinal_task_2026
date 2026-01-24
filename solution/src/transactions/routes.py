@@ -115,16 +115,7 @@ async def get_all_transactions_routes(
     if current_user.user_role == UserRole.user:
         filter_params.userId = current_user.user_id
     transactions = await get_all_transactions(filter_params)
-    items: list[TransactionResponse] = []
-    for t in transactions:
-        results = await get_transaction_all_rule_results(t)
-        results_sc = [to_scheme_transaction_result(i) for i in results]
-        items.append(
-            TransactionResponse(
-                transaction=to_scheme_transaction(t), ruleResults=results_sc
-            )
-        )
-
+    items = [to_scheme_transaction(t) for t in transactions]
     return PagedTransactions(
         items=items,
         total=len(items),

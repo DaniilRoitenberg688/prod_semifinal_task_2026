@@ -91,7 +91,7 @@ class BatchResponse(BaseModel):
 
 
 class PagedTransactions(BaseModel):
-    items: list[TransactionResponse]
+    items: list[TransactionScheme]
     total: int
     page: int
     size: int
