@@ -55,6 +55,7 @@ async def get_rules_stats(filter: RulesStatsIn) -> list[RuleMatchRow]:
         users = set()
         merchants = set()
         matched = 0
+        counter = 0
         for res in ress:
             tr = await get_transaction_by_id(res.transaction_id)
             if tr is None:
@@ -64,8 +65,7 @@ async def get_rules_stats(filter: RulesStatsIn) -> list[RuleMatchRow]:
             if not ( filter.from_time <= tr.timestamp < filter.to):
                 continue
             matched += int(res.matched)
-            if tr is None:
-                 continue
+            counter += 1
             users.add(tr.user_id)
             merchants.add(tr.merchant_id)
         items.append(RuleMatchRow(
@@ -74,7 +74,7 @@ async def get_rules_stats(filter: RulesStatsIn) -> list[RuleMatchRow]:
             matches=matched,
             uniqueUsers=len(users),
             uniqueMerchants=len(merchants),
-            shareOfDeclines=(matched/len(ress))
+            shareOfDeclines=(matched/counter)
 
         ))
     return sorted(items, key=lambda x: -x.matches)[:filter.top]
