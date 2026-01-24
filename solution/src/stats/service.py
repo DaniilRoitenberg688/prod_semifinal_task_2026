@@ -1,9 +1,9 @@
 from typing import Tuple
-from src.fraud_rules.repository import get_all_rule_results_stats, get_rule_all_results, get_rules
+from src.fraud_rules.repository import get_rule_all_results, get_rules
 from src.transactions.models import Transaction, TransactionStatus
-from src.stats.schemes import MerchantRiskRow, RuleMatchRow, RulesStatsIn, StatsOverviewIn
+from src.stats.schemes import MerchantRiskRow, RuleMatchRow, RulesStatsIn
 
-from src.transactions.repository import get_all_transactions_stats, get_transaction_all_rule_results, get_transaction_by_id
+from src.transactions.repository import get_all_transactions_stats, get_transaction_by_id
 
 
 async def get_transactions_sum(trs: list[Transaction]) -> float:
@@ -45,8 +45,10 @@ async def get_merchants(trs: list[Transaction]) -> list[MerchantRiskRow]:
 
 
 
-async def get_rules_stats(filter: RulesStatsIn) -> list[RuleMatchRow]:
+async def get_rules_stats(filter_d: RulesStatsIn) -> list[RuleMatchRow]:
     rules = await get_rules()
+    transactions = await get_all_transactions_stats(filter_d)
+    transactions = list(filter(lambda a: a.status == TransactionStatus.declined, transactions))
     items: list[RuleMatchRow] = []
     for r in rules:
         ress = await get_rule_all_results(r)
@@ -55,29 +57,29 @@ async def get_rules_stats(filter: RulesStatsIn) -> list[RuleMatchRow]:
         users = set()
         merchants = set()
         matched = 0
-        counter = 0
         for res in ress:
             tr = await get_transaction_by_id(res.transaction_id)
             if tr is None:
                 continue
-            if filter.from_time is None:
+            if filter_d.from_time is None:
                 continue
-            if not ( filter.from_time <= tr.timestamp < filter.to):
+            if not ( filter_d.from_time <= tr.timestamp < filter_d.to):
                 continue
-            matched += int(res.matched)
-            counter += 1
-            users.add(tr.user_id)
-            merchants.add(tr.merchant_id)
+            if res.matched:
+                matched += 1
+                users.add(tr.user_id)
+                merchants.add(tr.merchant_id)
+
         items.append(RuleMatchRow(
             ruleId=r.id,
             ruleName=r.name,
             matches=matched,
             uniqueUsers=len(users),
             uniqueMerchants=len(merchants),
-            shareOfDeclines=(matched/counter)
+            shareOfDeclines=(matched/len(transactions))
 
         ))
-    return sorted(items, key=lambda x: -x.matches)[:filter.top]
+    return sorted(items, key=lambda x: -x.matches)[:filter_d.top]
 
         
 
