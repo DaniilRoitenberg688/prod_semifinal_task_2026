@@ -10,7 +10,6 @@ class StatsOverviewIn(BaseModel):
 
     @model_validator(mode="after")
     def validate_time(self) -> 'StatsOverviewIn':
-        print(self.from_time)
         if self.from_time is None:
             self.from_time = self.to - datetime.timedelta(days=30)
             return self
@@ -43,5 +42,27 @@ class GroupByEnum(Enum):
     week = datetime.timedelta(weeks=1)
 
 class StatsGroupBy(StatsOverviewIn):
-    groupBy: GroupByEnum = GroupByEnum.day
+    groupBy: Literal["day", "hour", "week"] = "day"
+    @model_validator(mode="after")
+    def validate_time(self) -> 'StatsGroupBy':
+        if self.from_time is None:
+            self.from_time = self.to - datetime.timedelta(days=30)
+        if self.groupBy == "hour" and self.to - self.from_time > datetime.timedelta(days=7):
+            raise ValueError
+        if self.groupBy == "day" and self.to - self.from_time > datetime.timedelta(days=90):
+            raise ValueError
+        if self.groupBy == "week" and self.to - self.from_time > datetime.timedelta(days=365):
+            raise ValueError
+        return self
+
+class TimePoint(BaseModel):
+    bucketStart: datetime.datetime
+    txCount: int
+    gmv: float
+    approvalRate: float
+    declineRate: float
+
+
+class TimePointsOut(BaseModel):
+    points: list[TimePoint]
 
