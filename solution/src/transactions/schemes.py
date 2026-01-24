@@ -10,7 +10,7 @@ from src.transactions.models import TransactionChannel, TransactionStatus
 class TransactionLocation(BaseModel):
     country: Optional[str] = Field(default=None, min_length=2, max_length=2, pattern="^[A-Z]{2}$")
     city: Optional[str] = Field(default=None, max_length=128)
-    longitude: Optional[float] = Field(ge=-90, le=90, default=None)
+    longitude: Optional[float] = Field(ge=-180, le=180, default=None)
     latitude: Optional[float] = Field(None,ge=-90, le=90)
 
     @model_validator(mode="after")
@@ -18,9 +18,9 @@ class TransactionLocation(BaseModel):
         latitude = self.latitude
         longitude = self.longitude
         if latitude is None and longitude is not None:
-            raise ValueError
+            raise ValueError("cannot use longitude without latitude")
         if latitude is not None and longitude is None:
-            raise ValueError
+            raise ValueError("cannot use latitude without longitude ")
         return self
 
 
@@ -51,7 +51,7 @@ class BaseTransaction(BaseModel):
         t = t.replace(tzinfo=datetime.timezone.utc)
 
         if t - datetime.datetime.now(datetime.timezone.utc) > datetime.timedelta(minutes=5):
-            raise ValueError
+            raise ValueError("time stamp is too far from now")
         return t
 
 
@@ -113,5 +113,5 @@ class FilterTransactionsQuery(BaseModel):
             self.from_time = self.to - datetime.timedelta(days=90)
             return self
         if self.to - self.from_time > datetime.timedelta(days=90):
-            raise ValueError
+            raise ValueError("from is too far away from to")
         return self

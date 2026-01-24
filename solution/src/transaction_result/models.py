@@ -2,6 +2,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database import Base
 import uuid
+import datetime
 
 
 class TransactionRuleResult(Base):
@@ -13,6 +14,9 @@ class TransactionRuleResult(Base):
     rule_priority: Mapped[int] = mapped_column()
     description: Mapped[str] = mapped_column()
     matched: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        nullable=False, default=datetime.datetime.now()
+    )
 
 
     def to_dict(self) -> dict:

@@ -1,13 +1,21 @@
 from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query
 from src.exceptions import ApiError, ErrorCode
+from src.stats.schemes import (
+    GroupByEnum,
+    RulesStatsIn,
+    RuleStatsOut,
+    StatsGroupBy,
+    StatsOverviewIn,
+    StatsOverviewOut,
+    TimePoint,
+    TimePointsOut,
+)
+from src.stats.service import get_merchants, get_rates, get_transactions_sum, get_rules_stats
+from src.transactions.repository import get_all_transactions_stats
 from src.users.models import User
 from src.users.service import check_token_admin_only
-
-from src.stats.schemes import GroupByEnum, StatsGroupBy, StatsOverviewIn, StatsOverviewOut, TimePoint, TimePointsOut
-from src.transactions.repository import get_all_transactions_stats
-from src.stats.service import get_merchants, get_rates, get_transactions_sum
-
 
 router = APIRouter(prefix="/api/v1/stats")
 
@@ -25,7 +33,7 @@ async def get_overview(filter_params: Annotated[StatsOverviewIn, Query()], curre
         gmv=gmv,
         approvalRate=apr,
         declineRate=der,
-        topRiskMerchants=merchs
+        topRiskMerchants=merchs[:10]
     )
 
 
@@ -78,6 +86,13 @@ async def timeseries(filter_params: Annotated[StatsGroupBy, Query()], current_us
 
 
     return TimePointsOut(points=points)
+
+
+
+@router.get("/rules/matches")
+async def rule_stats(filter: RulesStatsIn) -> RuleStatsOut:
+    items = await get_rules_stats(filter)
+    return RuleStatsOut(items=items)
         
 
     
