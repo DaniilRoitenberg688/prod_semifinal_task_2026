@@ -79,7 +79,7 @@ async def get_all_transactions(filters: FilterTransactionsQuery) -> list[Transac
             q = q.where(Transaction.timestamp <= filters.from_time)
         if filters.to is not None:
             q = q.where(Transaction.timestamp <= filters.to)
-        q = q.order_by(Transaction.timestamp.asc()).offset(filters.page * filters.size).limit(filters.size)
+        q = q.order_by(Transaction.timestamp.desc()).offset(filters.page * filters.size).limit(filters.size)
         res = await session.scalars(q)
         return list(res.all())
         
