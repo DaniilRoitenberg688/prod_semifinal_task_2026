@@ -90,3 +90,14 @@ class RiskMerchantIn(StatsOverviewIn):
 
 class RiskMerchantOut(BaseModel):
     items: list[MerchantRiskRow]
+
+
+class UserRiskProfile(BaseModel):
+    userId: uuid.UUID
+    txCount_24h: int
+    gmv_24h: float
+    distinctDevices_24h: int
+    distinctIps_24h: int
+    distinctCities_24h: int
+    declineRate_30d: float
+    lastSeenAt: Optional[datetime.datetime] = None

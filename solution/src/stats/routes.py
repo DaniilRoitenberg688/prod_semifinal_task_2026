@@ -1,10 +1,11 @@
 from typing import Annotated
+import uuid
+import datetime
 
 from fastapi import APIRouter, Depends, Query
 from src.exceptions import ApiError, ErrorCode
 from src.stats.schemes import (
     GroupByEnum,
-    MerchantRiskRow,
     RiskMerchantIn,
     RiskMerchantOut,
     RulesStatsIn,
@@ -14,6 +15,7 @@ from src.stats.schemes import (
     StatsOverviewOut,
     TimePoint,
     TimePointsOut,
+    UserRiskProfile,
 )
 from src.stats.service import (
     get_merchants,
@@ -25,9 +27,12 @@ from src.stats.service import (
 from src.transactions.repository import (
     get_all_transactions_grouped_by_merchant,
     get_all_transactions_stats,
+    get_transcations_by_user_id,
 )
-from src.users.models import User
+from src.users.models import User, UserRole
 from src.users.service import check_token_admin_only
+from src.transactions.models import TransactionStatus
+from src.users.repository import get_user_by_id
 
 router = APIRouter(prefix="/api/v1/stats")
 
@@ -120,6 +125,90 @@ async def risk_merchants(
 ) -> RiskMerchantOut:
     d = await merchant_get_risk(filter)
     return RiskMerchantOut(items=d)
+
+
+@router.get("/users/{id}/risk-profile")
+async def user_rist(
+    id: uuid.UUID, current_user: User = Depends(check_token_admin_only)
+) -> UserRiskProfile:
+    user = current_user
+    if current_user.user_role == UserRole.admin:
+        user = await get_user_by_id(id)
+    if user is None:
+        raise ApiError(
+            status_code=404,
+            err_code=ErrorCode.not_found,
+            message="user not found",
+            details={
+            }
+        )
+    ts = await get_transcations_by_user_id(user.id)
+    if not ts:
+        return UserRiskProfile(
+            txCount_24h=0,
+            gmv_24h=0,
+            userId=user.id,
+            distinctCities_24h=0,
+            distinctDevices_24h=0,
+            distinctIps_24h=0,
+            declineRate_30d=0,
+        ) 
+    ts = sorted(ts, key=lambda x: x.timestamp, reverse=True)
+    thts = list(
+        filter(
+            lambda x: datetime.datetime.now(datetime.timezone.utc)
+            - datetime.timedelta(hours=24)
+            <= x.timestamp
+            < datetime.datetime.now(datetime.timezone.utc),
+            ts,
+        )
+    )
+
+    tdts = list(
+        filter(
+            lambda x: datetime.datetime.now(datetime.timezone.utc)
+            - datetime.timedelta(days=30)
+            <= x.timestamp
+            < datetime.datetime.now(datetime.timezone.utc),
+            ts,
+        )
+    )
+
+    if not tdts:
+        return UserRiskProfile(
+            txCount_24h=0,
+            gmv_24h=0,
+            userId=user.id,
+            distinctCities_24h=0,
+            distinctDevices_24h=0,
+            distinctIps_24h=0,
+            declineRate_30d=0,
+            lastSeenAt=ts[0].timestamp
+        ) 
+    devs = set()
+    ips = set()
+    cit = set()
+    gmv = 0
+    for i in thts:
+        gmv += i.amount
+        devs.add(i.device_id)
+        ips.add(i.ip_address)
+        cit.add(i.city)
+
+    dec = len([i for i in tdts if i.status == TransactionStatus.declined])
+
+    return UserRiskProfile(
+        txCount_24h=len(thts),
+        gmv_24h=gmv,
+        userId=user.id,
+        distinctCities_24h=len(cit),
+        distinctDevices_24h=len(devs),
+        distinctIps_24h=len(ips),
+        declineRate_30d=dec/len(tdts),
+        lastSeenAt=ts[0].timestamp
+    ) 
+    
+
 
 
 
